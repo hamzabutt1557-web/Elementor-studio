@@ -449,20 +449,13 @@ export async function crawl(
       title = data.title.slice(0, 200) || title;
       warnings.push(...data.warnings);
       if (device === "desktop") {
-        // Reference imagery is optional; a screenshot timeout must not discard
-        // a complete, editable DOM capture.
+        // Keep reference capture bounded to the initial viewport. Full-page
+        // rasterization of long catalogs can exhaust a serverless renderer.
         try {
-          const reference = await page.screenshot({ type: "jpeg", quality: 50, fullPage: true, animations: "disabled", timeout: 5000 });
+          const reference = await page.screenshot({ type: "jpeg", quality: 55, timeout: 15000 });
           screenshot = "data:image/jpeg;base64," + reference.toString("base64");
         } catch {
-          warnings.push("Full-page reference image was unavailable. The captured original may show only the top viewport; use Open original for the full page.");
-          try {
-            await restoreCaptureViewport(page, viewportWidths.desktop);
-            const reference = await page.screenshot({ type: "jpeg", quality: 50, animations: "disabled", timeout: 3500 });
-            screenshot = "data:image/jpeg;base64," + reference.toString("base64");
-          } catch {
-            warnings.push("Reference screenshot unavailable. Editable elements were retained; use Open original to compare.");
-          }
+          warnings.push("Reference screenshot unavailable. Editable elements were retained; use Open original to compare.");
         }
       }
     }
