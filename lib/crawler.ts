@@ -448,12 +448,23 @@ export async function crawl(
       sourceGeometry[device] = data.geometry;
       title = data.title.slice(0, 200) || title;
       warnings.push(...data.warnings);
-      if (device === "desktop")
-        screenshot =
-          "data:image/jpeg;base64," +
-          (await page.screenshot({ type: "jpeg", quality: 55, fullPage: true, timeout: 10000 })).toString(
-            "base64",
-          );
+      if (device === "desktop") {
+        // Reference imagery is optional; a screenshot timeout must not discard
+        // a complete, editable DOM capture.
+        try {
+          const reference = await page.screenshot({ type: "jpeg", quality: 50, fullPage: true, animations: "disabled", timeout: 5000 });
+          screenshot = "data:image/jpeg;base64," + reference.toString("base64");
+        } catch {
+          warnings.push("Full-page reference image was unavailable. The captured original may show only the top viewport; use Open original for the full page.");
+          try {
+            await restoreCaptureViewport(page, viewportWidths.desktop);
+            const reference = await page.screenshot({ type: "jpeg", quality: 50, animations: "disabled", timeout: 3500 });
+            screenshot = "data:image/jpeg;base64," + reference.toString("base64");
+          } catch {
+            warnings.push("Reference screenshot unavailable. Editable elements were retained; use Open original to compare.");
+          }
+        }
+      }
     }
     snapshots.desktop = mergeResponsive(
       snapshots.desktop,

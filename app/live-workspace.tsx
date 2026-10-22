@@ -809,7 +809,7 @@ export default function LiveWorkspace({
               )}
               {original === "capture" && (
                 <p className="live-note">
-                  Captured desktop reference · 1440px · not an interactive live site.
+                  Captured desktop reference · 1440px · may show only the top viewport.
                 </p>
               )}
               <div className="live-scroll">
