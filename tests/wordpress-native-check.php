@@ -1,0 +1,23 @@
+<?php
+require '/wordpress/wp-load.php';
+wp_set_current_user(1);
+require_once '/wordpress/wp-content/plugins/elementor-studio-importer.php';
+$template=json_decode(file_get_contents('/qa/template.json'),true);
+$count=0;$elements=estudio_clean_elements($template['content'],0,$count);
+$pages=array(array('elements'=>$elements));
+$kit_id=\Elementor\Plugin::$instance->kits_manager->get_active_id();
+if(!$kit_id)throw new Exception('Missing active kit');
+$settings=get_post_meta($kit_id,'_elementor_page_settings',true);
+$next=estudio_global_styles($pages,is_array($settings)?$settings:array());
+update_post_meta($kit_id,'_elementor_page_settings',$next);
+$elements=$pages[0]['elements'];
+$id=wp_insert_post(array('post_type'=>'page','post_status'=>'publish','post_title'=>'Native Audit Fixture'),true);
+if(is_wp_error($id))throw new Exception($id->get_error_message());
+update_post_meta($id,'_elementor_edit_mode','builder');update_post_meta($id,'_elementor_template_type','wp-page');
+update_post_meta($id,'_elementor_version',ELEMENTOR_VERSION);update_post_meta($id,'_elementor_data',wp_slash(wp_json_encode($elements)));
+$html=\Elementor\Plugin::$instance->frontend->get_builder_content_for_display($id,true);
+$checks=array('heading'=>strpos($html,'Native Audit Fixture')!==false,'rich_bold'=>strpos($html,'<strong>Bold</strong>')!==false,'inline_link'=>strpos($html,'https://example.com/contact')!==false,'card_link'=>strpos($html,'https://example.com/work')!==false,'grid'=>strpos($html,'e-con-grid')!==false,'global_font'=>count($next['custom_typography']??array())>0);
+$report=array('wordpress'=>get_bloginfo('version'),'elementor'=>ELEMENTOR_VERSION,'nodes'=>$count,'checks'=>$checks,'global_colors'=>count($next['custom_colors']??array()),'global_fonts'=>count($next['custom_typography']??array()),'html_bytes'=>strlen($html));
+file_put_contents('/qa/report.json',wp_json_encode($report));file_put_contents('/qa/native-render.html',$html);
+if(in_array(false,$checks,true))throw new Exception('Native acceptance failed: '.wp_json_encode($checks));
+echo wp_json_encode($report);

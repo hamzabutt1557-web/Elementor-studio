@@ -1,4 +1,4 @@
-# Elementor Studio 0.4.9
+# Elementor Studio 0.4.10
 
 URL or client brief → editable draft → live edit/compare → native Elementor JSON or WordPress ZIP package.
 This is a page draft generator for owned/authorized sources. No similarity percentage or arbitrary-site functional clone is promised.
@@ -29,7 +29,7 @@ Works with the existing Vercel URL; no custom app domain is required. No databas
 ## Capture and content
 
 - Computed layout capture at desktop 1440px, tablet **820px**, mobile 390px. The tablet sample is inside common 768–1023px ranges; one sample cannot represent every breakpoint. Preview uses Elementor's default 1024/767px boundaries.
-- Limits: 1,000 captured elements/depth 22; merged/exported design up to 1,200 elements/depth 24. Responsive-only nodes may increase the merged count.
+- Limits: 3,000 captured elements/depth 22; merged/exported design up to 3,000 elements/depth 24. Responsive-only nodes may increase the merged count.
 - Native containers, heading, text-editor, button, image and **video** widgets. Text emphasis and safe inline links are preserved as escaped structured runs. Plain text edits replace stale rich formatting.
 - Linked image/card containers retain destination links. Inline SVG artwork is rasterized into bounded image widgets (up to 20 embedded assets); SVG paths are not vector-editable. Unsupported artwork is reported.
 - Direct MP4/WebM/OGG and known YouTube/Vimeo embeds are captured as video widgets. Video remains remotely hosted. Arbitrary iframe/canvas content is reported for replacement.
@@ -138,3 +138,9 @@ In Preview & edit, double-click a heading or paragraph to type directly on the c
 ## Conversion-first update (0.4.6)
 
 Reference capture now preserves body spacing, mixed text and decorative boxes, resets desktop-only styles at smaller screens, retains reverse flex directions and carries native width limits into export. Extra local product tools are off by default; enable them in review notes only when wanted. New URL builds include an initial element-geometry layout check when capture time allows. This is not a pixel similarity score or WordPress validation. Rebuild existing saved drafts to use these converter changes. See CONVERSION-REVIEW.md for test scope and outstanding delivery checks.
+
+## 0.4.10 — repository recovery and capture fidelity
+
+Complete application folders are restored alongside the 0.4.9 Layers editor and importer CSS refresh. Capture now retains negative-margin row widths above 100%, reserved media slots, and accessible source font faces. Original comparison starts on the captured desktop reference when available. The node budget is 3,000 and incomplete browser captures fail explicitly. Templates use compact JSON and enforce the importer's 3 MB limit.
+
+Custom source font URLs remain external, including after ZIP import. Install the included importer to load them in WordPress; manual JSON does not register this metadata. These fixes do not establish universal visual equivalence. Header/filter fidelity and end-to-end visual acceptance on the target WordPress installation remain open.

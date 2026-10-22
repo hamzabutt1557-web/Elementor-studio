@@ -1,0 +1,367 @@
+{
+  "version": "0.4.6",
+  "checked_at": "2026-10-18",
+  "automated_tests": 77,
+  "automated_tests_status": "passed",
+  "typecheck": "passed",
+  "production_build": "passed",
+  "php_runtime_checks": {
+    "7.4": "passed: globals, fonts, bounded native widths, responsive resets and optional product marker; not an interactive Elementor session",
+    "8.3": "passed: globals, fonts, bounded native widths, responsive resets and optional product marker; not an interactive Elementor session"
+  },
+  "wordpress_import": "Prior controlled WordPress/Elementor frontend integration passed on an earlier release. Full admin ZIP upload and interactive Elementor frontend/editor visual acceptance for 0.4.6 remain pending.",
+  "capture": "1440 / 820 / 390 px; rich runs, linked containers, SVG rasterization and video paths added. New rendered-capture paths need live cross-site acceptance.",
+  "visual_similarity": "Not measured; no fidelity percentage claimed",
+  "AI_provider_calls": "No real provider key configured; budget/failure/adapter regression tests passed",
+  "deployment": {
+    "status": "READY",
+    "id": "dpl_8Z7tYK1wPN3PbXUm3q9nfSbJaM6h",
+    "url": "https://elementor-studio.vercel.app/",
+    "version": "0.4.6",
+    "code_commit": "ef35252",
+    "auth_mode": "password (email provider connection pending)"
+  },
+  "access": "Private password access remains live. Optional verified-email access requires Supabase project connection; when enabled, password cannot bypass it. Private-network, robots and spending checks remain.",
+  "form_support": "Editable labelled placeholders and explicit backend warning; operational forms require a WordPress form plugin",
+  "globals": "Native global colours and a global font verified in active Kit mapping and generated frontend. Standalone JSON retains portable local values.",
+  "limitations": [
+    "No full operational WooCommerce store",
+    "No arbitrary iframe/canvas conversion",
+    "Rasterized SVG paths are not vector-editable",
+    "No broad cross-site visual benchmark",
+    "Single-user access gate; distributed SaaS quotas not implemented",
+    "No UI-authored native export fixture from the user installation; current integration uses a controlled generated fixture."
+  ],
+  "live_api_checks": {
+    "authenticated_config": {
+      "status": 200,
+      "version": "0.4.6"
+    },
+    "authenticated_url_capture": 200,
+    "native_template": {
+      "status": 200,
+      "native": true
+    },
+    "zip": {
+      "status": 200,
+      "bytes": 138618,
+      "files": 21,
+      "templates": 1,
+      "importer": true
+    },
+    "layout_acceptance": "needs review"
+  },
+  "live_capture_check": {
+    "capture": "browser",
+    "nodes": 1044,
+    "rich_nodes": 395,
+    "linked_containers": 39,
+    "assets": 6,
+    "source": "https://bls.uk.com/collections/panties",
+    "limitations": "Capture limit reached and some inline artwork required replacement. Successful structure capture is not a visual fidelity score."
+  },
+  "wordpress_native_runtime": {
+    "wordpress": "7.1.3",
+    "elementor": "4.3.5",
+    "nodes": 10,
+    "checks": {
+      "heading": true,
+      "rich_bold": true,
+      "inline_link": true,
+      "card_link": true,
+      "grid": true,
+      "global_font": true,
+      "custom_grid_css": true,
+      "custom_auto_margin_css": true
+    },
+    "global_colors": 5,
+    "global_fonts": 1,
+    "html_bytes": 8642,
+    "scope": "Current importer sanitizer + native Elementor data saving + active Kit global mapping + real Elementor frontend HTML/CSS generation in isolated WordPress Playground"
+  },
+  "ui_refresh": {
+    "scope": "Responsive project setup drawer, optional AI connection, settings, appearance, provider model discovery",
+    "checks": "48 tests and production build passed; provider discovery tested with mock responses",
+    "browser_visual_check": "Blocked: cloud browser reported ERR_BLOCKED_BY_CLIENT while opening the site. Mobile layout and interactive browser acceptance not claimed."
+  },
+  "direct_url_capture": {
+    "policy": "Domain registration removed at explicit owner request; public custom and Shopify URLs share the capture path.",
+    "live_check": {
+      "status": 200,
+      "version": null,
+      "capture": "browser",
+      "title": "Example Domain",
+      "checks": {
+        "structure": "passed",
+        "nativeWidgets": 8,
+        "wordpressImport": "Not tested",
+        "similarity": "Not measured",
+        "store": "Not connected"
+      },
+      "error": null
+    },
+    "source": "https://example.com/",
+    "runtime_error_scan": "No error or warning logs returned for new deployment"
+  },
+  "email_login": {
+    "implementation": "Supabase email OTP with confirmed owner-email checks on private API boundaries and workspace page. Existing Vercel URL supported. No password bypass in email mode.",
+    "status": "Provider project and OTP email templates need connection; real delivered email/session acceptance pending. Existing password mode retained.",
+    "tests": "Verified/unverified/wrong/missing/anonymous identity, incomplete setup, independent API/proxy deny, owner-only OTP send, verification, rate-limit and expiry behavior (mocked provider)",
+    "browser_visual_check": "not performed",
+    "local_http_check": {
+      "scope": "Production build with placeholder project connection; no email sent or real provider session tested",
+      "results": {
+        "/sign-in": {
+          "status": 200,
+          "login_form": true
+        },
+        "/api/config": {
+          "status": 401,
+          "body": "{\"error\":\"Please sign in.\"}"
+        },
+        "/api/auth/send": {
+          "status": 403,
+          "body": "{\"error\":\"This email does not have workspace access.\"}"
+        },
+        "/api/auth/verify": {
+          "status": 403,
+          "body": "{\"error\":\"This email does not have workspace access.\"}"
+        },
+        "/share": {
+          "status": 200,
+          "login_form": null
+        }
+      }
+    },
+    "live_deployment_check": {
+      "signed_out_api": {
+        "status": 401,
+        "body": "Private app. Enter your app password."
+      },
+      "config": {
+        "status": 200,
+        "version": "0.4.3",
+        "capture": null,
+        "checks": null,
+        "setup_message": null
+      },
+      "sign_in_setup": {
+        "status": 200,
+        "version": null,
+        "capture": null,
+        "checks": null,
+        "setup_message": true
+      },
+      "email_connection_pending": {
+        "status": 503,
+        "body": "{\"error\":\"Email login is awaiting its one-time connection.\"}"
+      },
+      "public_share": {
+        "status": 200,
+        "version": null,
+        "capture": null,
+        "checks": null,
+        "setup_message": null
+      },
+      "brief_build": {
+        "status": 200,
+        "version": null,
+        "capture": "brief",
+        "checks": {
+          "structure": "passed",
+          "nativeWidgets": 10,
+          "wordpressImport": "Not tested",
+          "similarity": "Not measured",
+          "store": "Not connected"
+        },
+        "setup_message": null
+      }
+    },
+    "runtime_error_scan": "No error/warning logs returned for this deployment"
+  },
+  "workflow_upgrade": {
+    "preview_widths": [
+      1440,
+      820,
+      390
+    ],
+    "requests": "Readable error classes, header timeout bounds, caller abort support and zero automatic retry for paid requests",
+    "settings": "Active access mode and pending email connection shown",
+    "checks": "63 tests, typecheck and production build passed",
+    "browser_visual_check": "Blocked: cloud browser could not open target, ERR_BLOCKED_BY_CLIENT",
+    "live_api_check": {
+      "config": {
+        "status": 200,
+        "version": "0.4.4",
+        "access": {
+          "mode": "password",
+          "emailConnection": "pending"
+        }
+      },
+      "zip": {
+        "status": 200,
+        "bytes": 14412,
+        "files": 9,
+        "edited_heading_retained": true,
+        "importer_included": true
+      },
+      "signed_out_api": 401,
+      "public_share": 200,
+      "build": {
+        "status": 200,
+        "capture": "brief",
+        "widgets": 10
+      },
+      "edited_preview": 200,
+      "native_template": 200
+    },
+    "runtime_error_scan": "No error/warning logs returned for this deployment"
+  },
+  "typography": {
+    "catalog_families": 1950,
+    "catalog_source": "https://fonts.google.com/metadata/fonts",
+    "scope": "Full bundled Google font catalog, per-element and selected-word fonts, bold/italic/underline, native Elementor settings and escaped inline text",
+    "custom_fonts": "Installed/already-loaded names only; no font file upload or paid font collection",
+    "php_checks": "PHP 7.4 and 8.3 isolated font manifest, fixed-domain CSS URLs and global style regressions passed",
+    "wordPress_editor": "New interactive font selection/font-loading session not visually verified",
+    "browser_visual_check": "Unavailable: previous cloud-browser navigation failed with ERR_BLOCKED_BY_CLIENT",
+    "google_css_checks": {
+      "Noto Nastaliq Urdu": 200,
+      "Abel": 200,
+      "ABeeZee normal and italic": 200
+    },
+    "live_api_check": {
+      "config": {
+        "status": 200,
+        "version": "0.4.5",
+        "access": {
+          "mode": "password",
+          "emailConnection": "pending"
+        }
+      },
+      "font_catalog": {
+        "status": 200,
+        "families": 1950
+      },
+      "mixed_fonts_preview": {
+        "status": 200,
+        "google_css": true,
+        "bold": true,
+        "italic": true,
+        "underline": true
+      },
+      "zip": {
+        "status": 200,
+        "bytes": 15565,
+        "files": 9,
+        "edited_heading_retained": true,
+        "importer_included": true
+      },
+      "signed_out_api": 401,
+      "font_catalog_status": 200,
+      "build": {
+        "status": 200,
+        "capture": "brief",
+        "widgets": 10
+      },
+      "edited_preview": 200,
+      "native_template": 200
+    },
+    "runtime_error_scan": "No error/warning logs returned for this deployment"
+  },
+  "conversion_engine": {
+    "fixes": [
+      "mixed text and body spacing",
+      "decorative empty containers",
+      "responsive style resets",
+      "native maximum widths",
+      "reverse flex directions",
+      "opt-in catalogue controls",
+      "AI source preservation",
+      "source HTML whitespace collapse with real line breaks preserved",
+      "complete and canonical CSS font stacks",
+      "scroll reset after element screenshots",
+      "wait for preview font stylesheets before layout measurements",
+      "force viewport after element screenshots",
+      "omit off-canvas clipped slider copies with explicit review warning",
+      "preserve desktop navigation when mobile toggle is hidden",
+      "force instant scroll and verify viewport reset after offscreen artwork capture"
+    ],
+    "geometry_fixture_result": "tests/fixtures/layout-benchmark-result.json",
+    "fixture_checks": "Seven controlled pages at 1440/820/390; 21 checks, no missing comparable elements, p90 drift <=24px",
+    "ui_check": "Desktop 1440 and mobile 390: report rendering and optional tools preview API passed; no page JS errors",
+    "php_contract": "7.4 and 8.3 globals/fonts/layout settings passed",
+    "wordPress_acceptance": "Full admin ZIP upload and interactive frontend/editor acceptance for 0.4.6 pending",
+    "public_site_acceptance": {
+      "source": "https://orange-dolphin-412838.hostingersite.com/",
+      "capture": {
+        "status": 200,
+        "seconds": 56.1,
+        "capture": "browser",
+        "widgets": 381
+      },
+      "layout_acceptance": "needs review; real-site geometry exceeds the 24px controlled-fixture tolerance",
+      "devices": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 360,
+          "missing": 1,
+          "shifted": 347,
+          "medianDriftPx": 99,
+          "p90DriftPx": 181
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 342,
+          "missing": 1,
+          "shifted": 311,
+          "medianDriftPx": 117,
+          "p90DriftPx": 159
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 340,
+          "missing": 1,
+          "shifted": 301,
+          "medianDriftPx": 128,
+          "p90DriftPx": 228
+        }
+      ],
+      "template": {
+        "status": 200,
+        "native": true
+      },
+      "export": {
+        "status": 200,
+        "bytes": 138618,
+        "files": 21,
+        "templates": 1,
+        "importer": true
+      },
+      "scope": "DOM geometry only, not pixel fidelity or WordPress acceptance"
+    },
+    "live_capture_before_whitespace_fix": {
+      "source": "https://orange-dolphin-412838.hostingersite.com/",
+      "capture": "browser",
+      "widgets": 446,
+      "problem": "Large geometry drift exposed HTML indentation rendered as visible line breaks; corrected and awaiting live recheck."
+    },
+    "viewport_restore_check": {
+      "requested_width": 390,
+      "actual_width": 390,
+      "scrollY": 0,
+      "scope": "Controlled offscreen SVG screenshot with smooth scrolling enabled"
+    },
+    "runtime_error_scan": "No error/warning runtime logs returned for final deployment"
+  },
+  "alignment047": {
+    "version": "0.4.7",
+    "unitTests": 77,
+    "controlledGeometryCases": 24,
+    "publicSiteRecheck": "not completed",
+    "wordpressVisualAcceptance": "not completed"
+  }
+}

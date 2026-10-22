@@ -1,0 +1,258 @@
+{
+  "title": "Verdant Studio",
+  "type": "page",
+  "version": "0.4",
+  "page_settings": [],
+  "content": [
+    {
+      "id": "5bb5d41d",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "padding": {
+          "unit": "px",
+          "top": "48",
+          "right": "48",
+          "bottom": "48",
+          "left": "48",
+          "isLinked": true
+        },
+        "background_background": "classic",
+        "background_color": "#edf5f0",
+        "flex_direction": "column",
+        "flex_gap": {
+          "unit": "px",
+          "size": 22,
+          "column": "22",
+          "row": "22",
+          "isLinked": true
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "24",
+          "right": "24",
+          "bottom": "24",
+          "left": "24",
+          "isLinked": true
+        },
+        "content_width": "full"
+      },
+      "elements": [
+        {
+          "id": "1f23ba07",
+          "elType": "widget",
+          "isInner": true,
+          "settings": {
+            "title_color": "#172323",
+            "typography_typography": "custom",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 46,
+              "sizes": []
+            },
+            "typography_font_weight": "700",
+            "title": "Verdant Studio",
+            "header_size": "h2"
+          },
+          "elements": [],
+          "widgetType": "heading"
+        },
+        {
+          "id": "9120910d",
+          "elType": "widget",
+          "isInner": true,
+          "settings": {
+            "text_color": "#536362",
+            "typography_typography": "custom",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 18,
+              "sizes": []
+            },
+            "editor": "<p>Thoughtful landscape design for homes and businesses.</p>"
+          },
+          "elements": [],
+          "widgetType": "text-editor"
+        },
+        {
+          "id": "c438a694",
+          "elType": "widget",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#147d68",
+            "border_radius": {
+              "unit": "px",
+              "top": "8",
+              "right": "8",
+              "bottom": "8",
+              "left": "8",
+              "isLinked": true
+            },
+            "button_text_color": "#ffffff",
+            "text": "Get in touch",
+            "link": {
+              "url": "#contact",
+              "is_external": "",
+              "nofollow": ""
+            }
+          },
+          "elements": [],
+          "widgetType": "button"
+        }
+      ]
+    },
+    {
+      "id": "3b960667",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "padding": {
+          "unit": "px",
+          "top": "48",
+          "right": "48",
+          "bottom": "48",
+          "left": "48",
+          "isLinked": true
+        },
+        "background_background": "classic",
+        "background_color": "#ffffff",
+        "flex_direction": "column",
+        "flex_gap": {
+          "unit": "px",
+          "size": 22,
+          "column": "22",
+          "row": "22",
+          "isLinked": true
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "24",
+          "right": "24",
+          "bottom": "24",
+          "left": "24",
+          "isLinked": true
+        },
+        "content_width": "full"
+      },
+      "elements": [
+        {
+          "id": "9836120f",
+          "elType": "widget",
+          "isInner": true,
+          "settings": {
+            "title_color": "#172323",
+            "typography_typography": "custom",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 46,
+              "sizes": []
+            },
+            "typography_font_weight": "700",
+            "title": "What we offer",
+            "header_size": "h2"
+          },
+          "elements": [],
+          "widgetType": "heading"
+        },
+        {
+          "id": "9017fea7",
+          "elType": "widget",
+          "isInner": true,
+          "settings": {
+            "text_color": "#536362",
+            "typography_typography": "custom",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 18,
+              "sizes": []
+            },
+            "editor": "<p>Replace this section with your services, work, or product categories in Elementor.</p>"
+          },
+          "elements": [],
+          "widgetType": "text-editor"
+        }
+      ]
+    },
+    {
+      "id": "1fa2cb59",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "padding": {
+          "unit": "px",
+          "top": "48",
+          "right": "48",
+          "bottom": "48",
+          "left": "48",
+          "isLinked": true
+        },
+        "background_background": "classic",
+        "background_color": "#edf5f0",
+        "flex_direction": "column",
+        "flex_gap": {
+          "unit": "px",
+          "size": 22,
+          "column": "22",
+          "row": "22",
+          "isLinked": true
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "24",
+          "right": "24",
+          "bottom": "24",
+          "left": "24",
+          "isLinked": true
+        },
+        "content_width": "full"
+      },
+      "elements": [
+        {
+          "id": "50cd99f6",
+          "elType": "widget",
+          "isInner": true,
+          "settings": {
+            "title_color": "#172323",
+            "typography_typography": "custom",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 46,
+              "sizes": []
+            },
+            "typography_font_weight": "700",
+            "title": "Let’s work together",
+            "header_size": "h2"
+          },
+          "elements": [],
+          "widgetType": "heading"
+        },
+        {
+          "id": "e3944911",
+          "elType": "widget",
+          "isInner": true,
+          "settings": {
+            "text_color": "#536362",
+            "typography_typography": "custom",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 18,
+              "sizes": []
+            },
+            "editor": "<p>Add your contact details and preferred contact method here.</p>"
+          },
+          "elements": [],
+          "widgetType": "text-editor"
+        }
+      ]
+    }
+  ]
+}

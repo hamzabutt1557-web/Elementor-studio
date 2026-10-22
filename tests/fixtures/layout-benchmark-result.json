@@ -1,0 +1,369 @@
+{
+  "viewportRestore": {
+    "width": 390,
+    "scrollY": 0
+  },
+  "scope": "Controlled DOM geometry fixtures; not public-site pixel fidelity or WordPress acceptance",
+  "report": [
+    {
+      "fixture": "negativeGutters",
+      "elements": 9,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 9,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 9,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 9,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "fixture": "pseudoMedia",
+      "elements": 19,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 19,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 19,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 19,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "fixture": "productRatios",
+      "elements": 23,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 23,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 23,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 23,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 3,
+          "p90DriftPx": 5,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "fixture": "navigation",
+      "elements": 13,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 8,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 8,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 6,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 4,
+          "p90DriftPx": 4,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "fixture": "clippedSlider",
+      "elements": 8,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 7,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 7,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 7,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "fixture": "fontStack",
+      "elements": 7,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 7,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 7,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 7,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "fixture": "markup",
+      "elements": 5,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 5,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 5,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 5,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "fixture": "business",
+      "elements": 23,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 21,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 2,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 21,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 2,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 21,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 2,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "fixture": "catalog",
+      "elements": 28,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 28,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 20,
+          "p90DriftPx": 20,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 28,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 20,
+          "p90DriftPx": 20,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 28,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 20,
+          "p90DriftPx": 20,
+          "issues": []
+        }
+      ]
+    },
+    {
+      "fixture": "responsive",
+      "elements": 10,
+      "measurements": [
+        {
+          "device": "desktop",
+          "width": 1440,
+          "compared": 10,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 6,
+          "issues": []
+        },
+        {
+          "device": "tablet",
+          "width": 820,
+          "compared": 10,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        },
+        {
+          "device": "mobile",
+          "width": 390,
+          "compared": 10,
+          "missing": 0,
+          "shifted": 0,
+          "medianDriftPx": 0,
+          "p90DriftPx": 0,
+          "issues": []
+        }
+      ]
+    }
+  ]
+}
