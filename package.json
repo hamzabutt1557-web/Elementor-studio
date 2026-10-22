@@ -1,0 +1,36 @@
+{
+  "name": "elementor-studio",
+  "version": "0.4.9",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "sync:importer": "node --import tsx scripts/sync-importer.ts",
+    "sync:fonts": "node --import tsx scripts/sync-fonts.ts"
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "cheerio": "^1.1.2",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.468.0",
+    "next": "16.4.0",
+    "playwright-core": "^1.56.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "sharp": "^0.35.5",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}
