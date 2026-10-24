@@ -10,6 +10,8 @@ import { compareLayout, previewGeometry } from "../lib/layout-audit";
 import { viewportWidths } from "../lib/viewports";
 import assert from "node:assert/strict";
 const fixtures = {
+  floatedColumns: `<main><div style="display:flow-root;border-bottom:2px solid #222"><aside style="float:left;width:25%;padding:12px">Sidebar</aside><section style="float:right;width:70%;padding:12px"><h2>Product content</h2><p>Floated columns preserve their source positions.</p></section></div><footer style="clear:both">Footer after floats</footer></main>`,
+
   negativeGutters: `<div style="padding:30px"><div style="margin:0 -15px;display:flex"><article style="width:33.333%;padding:0 15px"><p>First product</p></article><article style="width:33.333%;padding:0 15px"><p>Second product</p></article><article style="width:33.333%;padding:0 15px"><p>Third product</p></article></div></div>`,
   pseudoMedia: `<style>.media-slot{position:relative}.media-slot:before{content:"";display:block;padding-top:150%}.media-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}</style><main><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">${[1,2,3].map(i=>`<article><div class="media-slot"><img src="https://fixture.example/p${i}.png"></div><h2>Product ${i}</h2><p>Price</p></article>`).join('')}</div><footer>Complete footer</footer></main>`,
 

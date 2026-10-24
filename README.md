@@ -1,4 +1,4 @@
-# Elementor Studio 0.4.10
+# Elementor Studio 0.4.11
 
 URL or client brief → editable draft → live edit/compare → native Elementor JSON or WordPress ZIP package.
 This is a page draft generator for owned/authorized sources. No similarity percentage or arbitrary-site functional clone is promised.
@@ -138,6 +138,15 @@ In Preview & edit, double-click a heading or paragraph to type directly on the c
 ## Conversion-first update (0.4.6)
 
 Reference capture now preserves body spacing, mixed text and decorative boxes, resets desktop-only styles at smaller screens, retains reverse flex directions and carries native width limits into export. Extra local product tools are off by default; enable them in review notes only when wanted. New URL builds include an initial element-geometry layout check when capture time allows. This is not a pixel similarity score or WordPress validation. Rebuild existing saved drafts to use these converter changes. See CONVERSION-REVIEW.md for test scope and outstanding delivery checks.
+
+## 0.4.11 — native import layout corrections
+
+- Patched Next.js to 16.4.3 and refreshed vulnerable transitive dependencies; npm audit reported zero known vulnerabilities.
+- Responsive grid and width settings now resolve inherited desktop/tablet context before export.
+- Source block/inline/flex/grid flow, floats, clearing, shrink behaviour and asymmetric borders have editable responsive controls in the importer.
+- Image wrappers retain their captured width. Native buttons and paragraphs no longer add a second layer of default padding or margins.
+- Local WordPress 7.1.3 / Elementor 4.3.5 test: ZIP imported as a draft, all four packaged images loaded locally, and 20 elements matched preview geometry at 1440/820/390px. A heading was changed through the Elementor editor model, saved as a draft and verified on the frontend.
+- Live BLS source comparison still has material drift; this release is not a pixel-perfect cloning guarantee. Forms and store backend connections still require manual implementation.
 
 ## 0.4.10 — repository recovery and capture fidelity
 

@@ -1,7 +1,7 @@
 {
-  "version": "0.4.10",
-  "checked_at": "2026-10-22",
-  "automated_tests": 84,
+  "version": "0.4.11",
+  "checked_at": "2026-10-24",
+  "automated_tests": 86,
   "automated_tests_status": "passed",
   "typecheck": "passed",
   "production_build": "passed",
@@ -9,14 +9,128 @@
     "7.4": "fonts, globals, native layout, CSS cache refresh passed",
     "8.3": "fonts, globals, native layout, CSS cache refresh passed"
   },
-  "controlled_geometry": "30 device cases passed, p90 drift <=24px",
-  "real_site_geometry": "BLS live test completed; substantial geometry mismatches remain. No pixel-fidelity percentage claimed.",
-  "wordpress_visual_acceptance": "Not performed for 0.4.10",
-  "deployment": {
-    "status": "READY",
-    "url": "https://elementor-studio.vercel.app/",
-    "commit": "7febd683e092aa9dd89948341aa672257566684e",
-    "id": "dpl_3Cy7U45psspPAjbR5sugdSqLRRKh"
+  "controlled_geometry": "33 device cases passed, p90 drift <=24px",
+  "real_site_geometry": {
+    "source": "https://bls.uk.com/collections/panties",
+    "reports": [
+      {
+        "device": "desktop",
+        "width": 1440,
+        "compared": 1187,
+        "missing": 9,
+        "shifted": 938,
+        "medianDriftPx": 191,
+        "p90DriftPx": 264,
+        "issues": [
+          {
+            "id": "d63a7845",
+            "driftPx": 785
+          },
+          {
+            "id": "b002ca92",
+            "driftPx": 785
+          },
+          {
+            "id": "3c0a62bb",
+            "driftPx": 656
+          },
+          {
+            "id": "6643fe55",
+            "driftPx": 277
+          },
+          {
+            "id": "3ba4287f",
+            "driftPx": 277
+          }
+        ]
+      },
+      {
+        "device": "tablet",
+        "width": 820,
+        "compared": 1464,
+        "missing": 9,
+        "shifted": 1223,
+        "medianDriftPx": 158,
+        "p90DriftPx": 218,
+        "issues": [
+          {
+            "id": "3bac62bf",
+            "driftPx": 857
+          },
+          {
+            "id": "1acfd176",
+            "driftPx": 854
+          },
+          {
+            "id": "3c0a62bb",
+            "driftPx": 670
+          },
+          {
+            "id": "b202cdb8",
+            "driftPx": 376
+          },
+          {
+            "id": "d63a7845",
+            "driftPx": 303
+          }
+        ]
+      },
+      {
+        "device": "mobile",
+        "width": 390,
+        "compared": 1457,
+        "missing": 9,
+        "shifted": 1348,
+        "medianDriftPx": 221,
+        "p90DriftPx": 342,
+        "issues": [
+          {
+            "id": "3bac62bf",
+            "driftPx": 857
+          },
+          {
+            "id": "1acfd176",
+            "driftPx": 854
+          },
+          {
+            "id": "3c0a62bb",
+            "driftPx": 670
+          },
+          {
+            "id": "50d689ac",
+            "driftPx": 394
+          },
+          {
+            "id": "b7ec7bc8",
+            "driftPx": 394
+          }
+        ]
+      }
+    ],
+    "limitations": "Diagnostic used allowlisted GET requests and placeholder SVG URLs. Source fonts and images remain external. Material drift remains; no full-site visual acceptance."
+  },
+  "wordpress_visual_acceptance": {
+    "environment": "WordPress 7.1.3, Elementor 4.3.5, PHP 8.3, SQLite; isolated local installation",
+    "draft_zip_import": "passed",
+    "packaged_media": "4/4 loaded from local WordPress Media Library",
+    "devices": [
+      {
+        "device": "desktop",
+        "elements": 20,
+        "max_drift_px": 0
+      },
+      {
+        "device": "tablet",
+        "elements": 20,
+        "max_drift_px": 0
+      },
+      {
+        "device": "mobile",
+        "elements": 20,
+        "max_drift_px": 0
+      }
+    ],
+    "editor_model_edit_save_frontend_verified": true
   },
   "limitations": [
     "No 100% cloning guarantee",
@@ -25,131 +139,151 @@
     "Source fonts remain external URLs and require source availability",
     "Paid AI provider calls not exercised"
   ],
-  "live_checks": {
-    "signed_out_api": 401,
-    "authenticated_config_version": "0.4.10",
-    "brief_build": 200,
-    "zip_export": "passed with source-font metadata and importer",
-    "url_capture": {
-      "source": "https://bls.uk.com/collections/panties",
-      "status": 200,
-      "widgets": 1498,
-      "screenshot": "unavailable in this run; viewport-only follow-up pending",
-      "layoutAudit": {
-        "status": "checked",
-        "basis": "initial-capture",
-        "devices": [
-          {
-            "device": "desktop",
-            "width": 1440,
-            "compared": 1144,
-            "missing": 0,
-            "shifted": 995,
-            "medianDriftPx": 271,
-            "p90DriftPx": 349,
-            "issues": [
-              {
-                "id": "55c630b2",
-                "driftPx": 11135,
-                "label": "container: section"
-              },
-              {
-                "id": "9155189a",
-                "driftPx": 935,
-                "label": "heading: Grid"
-              },
-              {
-                "id": "8f551574",
-                "driftPx": 935,
-                "label": "image: Captured artwork"
-              },
-              {
-                "id": "925a243b",
-                "driftPx": 935,
-                "label": "container: section"
-              },
-              {
-                "id": "ef2b4b76",
-                "driftPx": 935,
-                "label": "container: section"
-              }
-            ]
-          },
-          {
-            "device": "tablet",
-            "width": 820,
-            "compared": 1403,
-            "missing": 0,
-            "shifted": 1242,
-            "medianDriftPx": 224,
-            "p90DriftPx": 312,
-            "issues": [
-              {
-                "id": "3bac62bf",
-                "driftPx": 938,
-                "label": "container: section"
-              },
-              {
-                "id": "1acfd176",
-                "driftPx": 935,
-                "label": "button: \u00d7 Close"
-              },
-              {
-                "id": "b302cf4b",
-                "driftPx": 670,
-                "label": "container: section"
-              },
-              {
-                "id": "e07a3e90",
-                "driftPx": 530,
-                "label": "container: section"
-              },
-              {
-                "id": "af02c8ff",
-                "driftPx": 530,
-                "label": "container: section"
-              }
-            ]
-          },
-          {
-            "device": "mobile",
-            "width": 390,
-            "compared": 1396,
-            "missing": 8,
-            "shifted": 1343,
-            "medianDriftPx": 234,
-            "p90DriftPx": 372,
-            "issues": [
-              {
-                "id": "3bac62bf",
-                "driftPx": 910,
-                "label": "container: section"
-              },
-              {
-                "id": "1acfd176",
-                "driftPx": 907,
-                "label": "button: \u00d7 Close"
-              },
-              {
-                "id": "b302cf4b",
-                "driftPx": 670,
-                "label": "container: section"
-              },
-              {
-                "id": "e07a3e90",
-                "driftPx": 530,
-                "label": "container: section"
-              },
-              {
-                "id": "af02c8ff",
-                "driftPx": 530,
-                "label": "container: section"
-              }
-            ]
-          }
-        ],
-        "note": "Initial capture geometry check only; not pixel similarity or WordPress verification. Edits and AI changes require a new check."
+  "previous_release_validation": {
+    "deployment": {
+      "status": "READY",
+      "url": "https://elementor-studio.vercel.app/",
+      "commit": "7febd683e092aa9dd89948341aa672257566684e",
+      "id": "dpl_3Cy7U45psspPAjbR5sugdSqLRRKh"
+    },
+    "live_checks": {
+      "signed_out_api": 401,
+      "authenticated_config_version": "0.4.10",
+      "brief_build": 200,
+      "zip_export": "passed with source-font metadata and importer",
+      "url_capture": {
+        "source": "https://bls.uk.com/collections/panties",
+        "status": 200,
+        "widgets": 1498,
+        "screenshot": "unavailable in this run; viewport-only follow-up pending",
+        "layoutAudit": {
+          "status": "checked",
+          "basis": "initial-capture",
+          "devices": [
+            {
+              "device": "desktop",
+              "width": 1440,
+              "compared": 1144,
+              "missing": 0,
+              "shifted": 995,
+              "medianDriftPx": 271,
+              "p90DriftPx": 349,
+              "issues": [
+                {
+                  "id": "55c630b2",
+                  "driftPx": 11135,
+                  "label": "container: section"
+                },
+                {
+                  "id": "9155189a",
+                  "driftPx": 935,
+                  "label": "heading: Grid"
+                },
+                {
+                  "id": "8f551574",
+                  "driftPx": 935,
+                  "label": "image: Captured artwork"
+                },
+                {
+                  "id": "925a243b",
+                  "driftPx": 935,
+                  "label": "container: section"
+                },
+                {
+                  "id": "ef2b4b76",
+                  "driftPx": 935,
+                  "label": "container: section"
+                }
+              ]
+            },
+            {
+              "device": "tablet",
+              "width": 820,
+              "compared": 1403,
+              "missing": 0,
+              "shifted": 1242,
+              "medianDriftPx": 224,
+              "p90DriftPx": 312,
+              "issues": [
+                {
+                  "id": "3bac62bf",
+                  "driftPx": 938,
+                  "label": "container: section"
+                },
+                {
+                  "id": "1acfd176",
+                  "driftPx": 935,
+                  "label": "button: \u00d7 Close"
+                },
+                {
+                  "id": "b302cf4b",
+                  "driftPx": 670,
+                  "label": "container: section"
+                },
+                {
+                  "id": "e07a3e90",
+                  "driftPx": 530,
+                  "label": "container: section"
+                },
+                {
+                  "id": "af02c8ff",
+                  "driftPx": 530,
+                  "label": "container: section"
+                }
+              ]
+            },
+            {
+              "device": "mobile",
+              "width": 390,
+              "compared": 1396,
+              "missing": 8,
+              "shifted": 1343,
+              "medianDriftPx": 234,
+              "p90DriftPx": 372,
+              "issues": [
+                {
+                  "id": "3bac62bf",
+                  "driftPx": 910,
+                  "label": "container: section"
+                },
+                {
+                  "id": "1acfd176",
+                  "driftPx": 907,
+                  "label": "button: \u00d7 Close"
+                },
+                {
+                  "id": "b302cf4b",
+                  "driftPx": 670,
+                  "label": "container: section"
+                },
+                {
+                  "id": "e07a3e90",
+                  "driftPx": 530,
+                  "label": "container: section"
+                },
+                {
+                  "id": "af02c8ff",
+                  "driftPx": 530,
+                  "label": "container: section"
+                }
+              ]
+            }
+          ],
+          "note": "Initial capture geometry check only; not pixel similarity or WordPress verification. Edits and AI changes require a new check."
+        }
       }
     }
+  },
+  "deployment": {
+    "status": "user approved production release; deployment verification tracked separately"
+  },
+  "dependency_audit": {
+    "status": "0 vulnerabilities reported after patch updates",
+    "next": "16.4.3",
+    "undici": "7.30.1",
+    "zod": "4.6.7"
+  },
+  "local_production_smoke": {
+    "status": "not completed; local server smoke check did not return a result"
   }
 }

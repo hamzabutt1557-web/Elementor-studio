@@ -290,6 +290,14 @@ export function captureDocument() {
     const number = (v: string) =>
       Math.max(0, Math.min(200, parseFloat(v) || 0));
     const style: any = {
+      display: s.display === "inline" ? "inline-block" :
+        ["block", "flow-root", "inline-block", "flex", "inline-flex", "grid", "inline-grid"].includes(s.display) ? s.display : "block",
+      // Widths below are already the browser's final (possibly shrunken)
+      // widths. Applying flex shrink a second time distorts logos and cards.
+      flexShrink: 0,
+      float: ["left", "right"].includes(s.cssFloat) ? s.cssFloat : "none",
+      clear: ["left", "right", "both"].includes(s.clear) ? s.clear : "none",
+      verticalAlign: ["baseline", "top", "middle", "bottom", "text-top", "text-bottom", "sub", "super"].includes(s.verticalAlign) ? s.verticalAlign : "baseline",
       color: s.color,
       background: s.backgroundColor,
       fontFamily:
@@ -393,12 +401,9 @@ export function captureDocument() {
     if (["hidden", "auto", "clip"].includes(s.overflow))
       style.overflow = s.overflow;
     style.borderWidth = Math.min(50, parseFloat(s.borderTopWidth) || 0);
+    style.borderWidths = [s.borderTopWidth,s.borderRightWidth,s.borderBottomWidth,s.borderLeftWidth].map(v=>Math.min(50,parseFloat(v)||0));
     style.borderColor = s.borderTopColor;
-    style.borderStyle = ["solid", "dashed", "dotted", "double"].includes(
-      s.borderTopStyle,
-    )
-      ? s.borderTopStyle
-      : "none";
+    style.borderStyle = [s.borderTopStyle,s.borderRightStyle,s.borderBottomStyle,s.borderLeftStyle].find(v=>["solid", "dashed", "dotted", "double"].includes(v)) || "none";
     if (
       ["none", "uppercase", "lowercase", "capitalize"].includes(s.textTransform)
     )
@@ -484,6 +489,14 @@ export function captureDocument() {
     const isMarquee =
       /marquee/i.test(el.className) &&
       !el.parentElement?.closest('[class*="marquee"]');
+    const hasBoxedChildren = Array.from(el.children).some(c => {
+      const st = getComputedStyle(c);
+      if (st.display === "none" || st.visibility === "hidden") return false;
+      return st.display !== "inline" ||
+        [st.paddingTop, st.paddingRight, st.paddingBottom, st.paddingLeft,
+          st.marginTop, st.marginBottom, st.borderTopWidth, st.borderBottomWidth]
+          .some(v => Math.abs(parseFloat(v) || 0) > 0.5);
+    });
     if (
       /box-ratio|aspect-ratio/i.test(el.className) &&
       el.querySelector("img")
@@ -678,16 +691,16 @@ export function captureDocument() {
       alt = (el as HTMLImageElement).alt;
     } else if (
       (tag === "a" || tag === "button") &&
-      !el.querySelector("img,picture,div,h1,h2,h3,h4")
+      !el.querySelector("img,picture,svg,div,h1,h2,h3,h4")
     ) {
       kind = "button";
       text = visibleText(el);
       url = (el as HTMLAnchorElement).href || "#";
     } else if (
       (["p", "li", "label"].includes(tag) &&
-        !el.querySelector("img,div,ul,ol")) ||
+        !hasBoxedChildren && !el.querySelector("img,svg,div,ul,ol")) ||
       !el.children.length ||
-      (!el.querySelector("img,video,iframe,svg,input,textarea,select") &&
+      (!hasBoxedChildren && !el.querySelector("img,video,iframe,svg,input,textarea,select") &&
         Array.from(el.children).every(
           (c) => getComputedStyle(c).display === "inline",
         ))
@@ -695,6 +708,8 @@ export function captureDocument() {
       kind = "text";
       text = visibleText(el);
     } else {
+      if (s.display === "block" && rect.height > 0 && Array.from(el.children).some(c=>getComputedStyle(c).cssFloat !== "none"))
+        style.display = "flow-root";
       if (style.position === "static") style.position = "relative";
       const childBoxes = Array.from(el.children)
         .filter((c) => {
@@ -774,6 +789,8 @@ export function captureDocument() {
         return c instanceof Element ? read(c, path + "." + i, depth + 1) : [];
       });
     }
+    // Keep the outer line box. Taking the first child's line-height discarded
+    // announcement-bar height and accumulated drift down product catalogues.
     if (["text", "heading", "button"].includes(kind) && el.children.length) {
       const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
       let node: Node | null;
@@ -803,8 +820,10 @@ export function captureDocument() {
           Math.min(180, parseFloat(ts.fontSize) || 16),
         );
         style.fontWeight = ts.fontWeight;
-        style.lineHeight =
-          Math.min(300, parseFloat(ts.lineHeight) || 0) || undefined;
+        if ((parseFloat(s.fontSize) || 0) < 1)
+          style.lineHeight = Math.min(300, parseFloat(ts.lineHeight) || 0) || undefined;
+        if (["none", "uppercase", "lowercase", "capitalize"].includes(ts.textTransform))
+          style.textTransform = ts.textTransform;
         style.letterSpacing = Math.max(
           -20,
           Math.min(50, parseFloat(ts.letterSpacing) || 0),
@@ -813,9 +832,6 @@ export function captureDocument() {
       }
     }
     if (kind === "text" && s.display === "inline") {
-      // Inline text's measured width is content-dependent, not a layout width.
-      // Keeping it as a percentage makes prices wrap when fonts differ.
-      style.width = 100;
       if (
         parentStyle &&
         ["left", "center", "right"].includes(parentStyle.textAlign)

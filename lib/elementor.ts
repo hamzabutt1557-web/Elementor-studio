@@ -41,6 +41,11 @@ function settings(
   const out: Record<string, unknown> = {};
   const set = (k: string, v: unknown) => (out[k + suffix] = v);
   const advanced = (k: string) => (kind === "container" ? k : "_" + k);
+  if (s.display !== undefined) set("studio_display", s.display);
+  if (s.float !== undefined) set("studio_float", s.float);
+  if (s.clear !== undefined) set("studio_clear", s.clear);
+  if (s.verticalAlign !== undefined) set("studio_vertical_align", s.verticalAlign);
+  if (s.flexShrink !== undefined) set("studio_flex_shrink", { unit: "px", size: s.flexShrink, sizes: [] });
   if (s.hidden !== undefined)
     out["hide" + (suffix || "_desktop")] = s.hidden
       ? "hidden-" + (suffix.slice(1) || "desktop")
@@ -148,14 +153,14 @@ function settings(
   if (s.height !== undefined && kind === "image")
     set("height", { unit: "px", size: s.height, sizes: [] });
   if (s.textTransform) set("typography_text_transform", s.textTransform);
-  if (s.borderWidth !== undefined) {
+  if (s.borderWidth !== undefined || s.borderWidths) {
     set(
       advanced("border_border"),
-      s.borderWidth ? s.borderStyle || "solid" : "none",
+      (s.borderWidths?.some(v=>v>0) || s.borderWidth) ? s.borderStyle || "solid" : "none",
     );
     set(
       advanced("border_width"),
-      box([s.borderWidth, s.borderWidth, s.borderWidth, s.borderWidth]),
+      box(s.borderWidths || Array(4).fill(s.borderWidth || 0)),
     );
     set(advanced("border_color"), s.borderColor || s.color || "#000000");
   }
@@ -251,30 +256,35 @@ function settings(
   return out;
 }
 function convert(n: DesignNode, inner = false): Element {
+  // Breakpoint records are diffs. Controls such as grid columns, bounded
+  // widths and positioning need their inherited values to generate native CSS.
+  const editablePanel = (s: Style): Style => n.panel ? {
+    ...s, position: "static", zIndex: undefined, top: undefined,
+    left: undefined, height: undefined,
+  } : s;
+  const desktop = editablePanel(n.style);
+  const tablet = editablePanel({ ...n.style, ...n.tablet });
+  const mobile = editablePanel({ ...n.style, ...n.tablet, ...n.mobile });
+  const responsive = (base: Style, next: Style, suffix: string) => {
+    const inherited = settings(base, n.kind);
+    return Object.fromEntries(Object.entries(settings(next, n.kind, suffix)).filter(([key, value]) => {
+      const baseKey = key.startsWith("hide_") ? "hide_desktop" : key.slice(0, -suffix.length);
+      return JSON.stringify(value) !== JSON.stringify(inherited[baseKey]);
+    }));
+  };
   const e: Element = {
     id: n.id,
     elType: n.kind === "container" ? "container" : "widget",
     isInner: false,
     settings: {
-      ...settings(
-        n.panel
-          ? {
-              ...n.style,
-              position: "static",
-              zIndex: undefined,
-              top: undefined,
-              left: undefined,
-              height: undefined,
-            }
-          : n.style,
-        n.kind,
-      ),
-      ...settings(n.tablet || {}, n.kind, "_tablet"),
-      ...settings(n.mobile || {}, n.kind, "_mobile"),
+      ...settings(desktop, n.kind),
+      ...responsive(desktop, tablet, "_tablet"),
+      ...responsive(tablet, mobile, "_mobile"),
     },
     elements: [],
   };
   const classes = [
+    "estudio-node",
     n.product ? "estudio-product" : "",
     n.disclosure ? "estudio-disclosure" : "",
     n.panel ? `estudio-panel estudio-panel-${n.id}` : "",
@@ -309,8 +319,19 @@ function convert(n: DesignNode, inner = false): Element {
       e.settings.title = richText(n);
       e.settings.header_size = "h" + (n.level || 2);
     }
-    if (n.kind === "text") e.settings.editor = "<p>" + richText(n) + "</p>";
+    if (n.kind === "text") {
+      // The captured margin is on the widget. Theme paragraph margins must not
+      // add a second margin inside it (and accumulate down long catalogues).
+      e.settings.editor = '<p style="margin:0">' + richText(n) + "</p>";
+      e.settings.paragraph_spacing = { unit: "px", size: 0, sizes: [] };
+    }
     if (n.kind === "button") {
+      // Source box decoration is already mapped to the widget wrapper above.
+      // Reset Elementor's inner button defaults instead of doubling its padding.
+      e.settings.background_color = "rgba(0,0,0,0)";
+      e.settings.text_padding = { unit: "px", top: "0", right: "0", bottom: "0", left: "0", isLinked: true };
+      e.settings.border_radius = { unit: "px", top: "0", right: "0", bottom: "0", left: "0", isLinked: true };
+      e.settings.border_border = "none";
       e.settings.text = escape(n.text || "Button");
       e.settings.link = { url: n.url || "", is_external: "", nofollow: "" };
     }
@@ -322,6 +343,9 @@ function convert(n: DesignNode, inner = false): Element {
       e.settings.controls = "yes";
     }
     if (n.kind === "image") {
+      // The wrapper owns the captured width. Fill that wrapper instead of
+      // rendering a smaller source image at its intrinsic pixel width.
+      e.settings.width = { unit: "%", size: 100, sizes: [] };
       e.settings.image = { url: n.url || "", id: "" };
       e.settings.image_size = "full";
       e.settings.caption_source = "none";
@@ -361,6 +385,10 @@ export function previewHtml(input: Design, editable = false) {
     if (s.fontFamily) push("font-family", cssFontStack(s.fontFamily));
     if (s.fontSize) push("font-size", s.fontSize + "px");
     push("font-weight", s.fontWeight);
+    push("flex-shrink", s.flexShrink);
+    push("float", s.float);
+    push("clear", s.clear);
+    push("vertical-align", s.verticalAlign);
     if (s.width !== undefined) push("width", s.width + "%");
     if (s.height !== undefined) push("height", s.height + "px");
     if (s.maxWidth !== undefined) push("max-width", s.maxWidth + "px");
@@ -371,6 +399,7 @@ export function previewHtml(input: Design, editable = false) {
     push("overflow", s.overflow);
     push("text-transform", s.textTransform);
     if (s.borderWidth !== undefined) push("border-width", s.borderWidth + "px");
+    if (s.borderWidths) push("border-width", s.borderWidths.map(v=>v+"px").join(" "));
     push("border-style", s.borderStyle);
     push("border-color", s.borderColor);
     if (s.columnSpan) push("grid-column", "span " + s.columnSpan);
@@ -421,9 +450,10 @@ export function previewHtml(input: Design, editable = false) {
       if (s.rowGap !== undefined || s.gap !== undefined)
         push("row-gap", (s.rowGap ?? s.gap) + "px");
     }
+    if (s.display) push("display", s.display);
     if (s.hidden) rules.push("display:none");
     else if (s.hidden === false && kind !== "container")
-      push("display", "block");
+      push("display", s.display || "block");
     return rules.join(";");
   };
   let rules = "";
@@ -470,5 +500,5 @@ export function previewHtml(input: Design, editable = false) {
   const sourceFonts = (d.fontFaces || []).map(f => `@font-face{font-family:${cssFontStack(f.family)};src:url("${f.url}");font-weight:${f.weight};font-style:${f.style};font-display:swap}`).join("");
   const runtime = interactionScript + (editable ? editorScript : "");
   const hash = createHash("sha256").update(runtime).digest("base64");
-  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http: data:; media-src https: http:; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https: http:; script-src 'sha256-${hash}';">${fontLink}<style>${sourceFonts}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#172323;background:white}body>section{margin:0}h1,h2,h3,p{margin:0;overflow-wrap:break-word}section{min-width:0;flex-wrap:wrap}video,iframe{max-width:100%;width:100%;aspect-ratio:16/9;border:0}img{max-width:100%;height:auto;object-fit:contain}a{color:inherit;text-decoration:none}body a[data-estudio-id]{display:inline-block;width:fit-content;text-decoration:none}section>section{flex-shrink:1}button{font:inherit;cursor:pointer}a,button{min-width:max-content}${rules}${interactionCss}</style></head><body>${d.catalogTools ? '<span class="estudio-tools" hidden></span>' : ""}${body}<script>${runtime}</script></body></html>`;
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http: data:; media-src https: http:; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https: http:; script-src 'sha256-${hash}';">${fontLink}<style>${sourceFonts}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#172323;background:white}body>section{margin:0}h1,h2,h3,h4,h5,h6,p{margin:0;overflow-wrap:break-word}section{min-width:0;flex-wrap:wrap}video,iframe{max-width:100%;width:100%;aspect-ratio:16/9;border:0}img{max-width:100%;height:auto;object-fit:contain}a{color:inherit;text-decoration:none}body a[data-estudio-id]{display:inline-block;width:fit-content;text-decoration:none}section>section{flex-shrink:1}button{font:inherit;cursor:pointer}a,button{min-width:0}${rules}${interactionCss}</style></head><body>${d.catalogTools ? '<span class="estudio-tools" hidden></span>' : ""}${body}<script>${runtime}</script></body></html>`;
 }

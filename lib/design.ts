@@ -5,6 +5,11 @@ export const styleSchema = z
   .object({
     hidden: z.boolean().optional(),
     layout: z.enum(["flex", "grid"]).optional(),
+    display: z.enum(["block", "flow-root", "inline-block", "flex", "inline-flex", "grid", "inline-grid"]).optional(),
+    float: z.enum(["none", "left", "right"]).optional(),
+    clear: z.enum(["none", "left", "right", "both"]).optional(),
+    verticalAlign: z.enum(["baseline", "top", "middle", "bottom", "text-top", "text-bottom", "sub", "super"]).optional(),
+    flexShrink: z.number().min(0).max(10).optional(),
     columns: z
       .array(z.number().positive().max(10000))
       .min(1)
@@ -22,6 +27,7 @@ export const styleSchema = z
     maxWidth: z.number().positive().max(10000).optional(),
     overflow: z.enum(["visible", "hidden", "auto", "clip"]).optional(),
     borderWidth: z.number().min(0).max(50).optional(),
+    borderWidths: z.tuple([z.number().min(0).max(50),z.number().min(0).max(50),z.number().min(0).max(50),z.number().min(0).max(50)]).optional(),
     borderColor: z.string().max(100).optional(),
     borderStyle: z
       .enum(["none", "solid", "dashed", "dotted", "double"])
