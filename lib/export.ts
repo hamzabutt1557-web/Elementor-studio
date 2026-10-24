@@ -1,3 +1,4 @@
+import { qualityReport } from "./quality-report";
 import { isUpload } from "./uploaded-assets";
 import sharp from "sharp";
 import JSZip from "jszip";
@@ -117,6 +118,7 @@ export async function exportZip(inputs: unknown[], media = true) {
         {
           source: d.source,
           warnings: d.warnings,
+          deliveryChecklist: qualityReport(d),
           structure:
             "validated against internal schema and documented Elementor 0.4 envelope",
           wordpressImport: "Not tested",
@@ -142,7 +144,7 @@ export async function exportZip(inputs: unknown[], media = true) {
 7. Optional: check Add imported colours and fonts as new Elementor Global Styles in the importer. It appends custom Kit styles without replacing existing styles. Bare JSON keeps direct values.
 8. Navigation drawers and expandable FAQ sections use the included importer plugin runtime. Keep the importer active for these interactions. Bare JSON retains editable content but does not install this runtime.
 9. Images are optimized to WebP (up to 1600 px). Files exceeding download budgets stay linked to the source; review the media report.
-10. This release has automated data-contract tests and controlled DOM layout checks. Full admin ZIP upload and interactive Elementor editor acceptance remain pending; use staging first. No complete store or guaranteed exact clone is included. Optional local product tools change the captured layout and are disabled unless you enable them.
+10. This release has automated data-contract tests and controlled DOM layout checks. A controlled page has passed local WordPress ZIP import, media loading and Elementor edit/save verification. Your exported page still needs testing on staging. No complete store or guaranteed exact clone is included. Optional local product tools change the captured layout and are disabled unless you enable them.
 
 Media report:
 ` + mediaReport.join("\n"),

@@ -1,3 +1,4 @@
+import { BuildCapacity } from "./build-capacity";
 import { restoreCaptureViewport } from "./capture-viewport";
 import { previewHtml } from "./elementor";
 import {
@@ -16,13 +17,13 @@ import { Design, DesignNode, id, safeLink, validateDesign } from "./design";
 import { normalizeUrl, safeFetch } from "./network";
 import { mergeResponsive } from "./responsive";
 import { robotsAllows } from "./robots";
-export async function fetchPage(url: string) {
+export async function fetchPage(url: string, signal?: AbortSignal) {
   const u = normalizeUrl(url);
   assertCaptureAccess(u.href);
   let robots = "";
   try {
     robots = (
-      await safeFetch(new URL("/robots.txt", u).href, 100_000)
+      await safeFetch(new URL("/robots.txt", u).href, 100_000, 0, signal)
     ).body.toString();
   } catch (e) {
     if (!/HTTP 404|HTTP 410/.test(String(e)))
@@ -34,7 +35,7 @@ export async function fetchPage(url: string) {
     throw new Error(
       "This page is excluded by the site’s robots policy. Use an authorized brief or another page.",
     );
-  const page = await safeFetch(u.href);
+  const page = await safeFetch(u.href, undefined, 0, signal);
   if (!page.type.includes("text/html"))
     throw new Error("This URL is not an HTML page.");
   assertCaptureAccess(page.url);
@@ -216,11 +217,16 @@ export function staticDesign(html: string, url: string): Design {
 export async function crawl(
   url: string,
   progress: (message: string) => void = () => {},
+  signal?: AbortSignal,
 ) {
   progress("Checking source website…");
-  const source = await fetchPage(url);
+  signal?.throwIfAborted();
+  const source = await fetchPage(url, signal);
+  signal?.throwIfAborted();
   const startedAt = Date.now();
-  let browser;
+  let browser: import("playwright-core").Browser | undefined;
+  const abort = () => { void browser?.close().catch(() => {}); };
+  signal?.addEventListener("abort", abort, { once: true });
   try {
     const { chromium: pw } = await import("playwright-core");
     const { default: chromium } = await import("@sparticuz/chromium");
@@ -231,10 +237,13 @@ export async function crawl(
       args: chromium.args,
       headless: true,
     });
+    signal?.throwIfAborted();
     const context = await browser.newContext({
       serviceWorkers: "block",
       acceptDownloads: false,
     });
+    const resourceCapacity = new BuildCapacity(4, 240, 15000);
+    const resourceSignal = signal || new AbortController().signal;
     let requestCount = 0;
     let totalRequests = 0;
     let bytes = 0;
@@ -248,8 +257,13 @@ export async function crawl(
         if (!asset) {
           if (++requestCount > 240 || bytes > 24_000_000)
             return await route.abort();
-          asset = await safeFetch(req.url(), 4_000_000);
-          bytes += asset.body.length;
+          const release = await resourceCapacity.acquire(resourceSignal);
+          try {
+            if (bytes >= 24_000_000) return await route.abort();
+            asset = await safeFetch(req.url(), 4_000_000, 0, signal);
+            if (bytes + asset.body.length > 24_000_000) return await route.abort();
+            bytes += asset.body.length;
+          } finally { release(); }
           assetCache.set(req.url(), asset);
         }
         await route.fulfill({
@@ -586,6 +600,7 @@ export async function crawl(
         (e instanceof Error ? e.message : "Try again with a public page."),
     );
   } finally {
+    signal?.removeEventListener("abort", abort);
     await browser?.close();
   }
 }

@@ -99,7 +99,7 @@ test("multipage export packages independent templates, reports, previews and set
   );
   assert.ok(zip.file("SETUP.txt"));
   const setup = await zip.file("SETUP.txt")!.async("string");
-  assert.ok(setup.includes("acceptance remain pending"));
+  assert.ok(setup.includes("Your exported page still needs testing on staging"));
   const manifest=JSON.parse(await zip.file("studio-manifest.json")!.async("string"));
   assert.equal(manifest.format,"elementor-studio-v2");
   assert.equal(manifest.pages.length,2);

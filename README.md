@@ -1,4 +1,4 @@
-# Elementor Studio 0.4.11
+# Elementor Studio 0.4.12
 
 URL or client brief → editable draft → live edit/compare → native Elementor JSON or WordPress ZIP package.
 This is a page draft generator for owned/authorized sources. No similarity percentage or arbitrary-site functional clone is promised.
@@ -138,6 +138,15 @@ In Preview & edit, double-click a heading or paragraph to type directly on the c
 ## Conversion-first update (0.4.6)
 
 Reference capture now preserves body spacing, mixed text and decorative boxes, resets desktop-only styles at smaller screens, retains reverse flex directions and carries native width limits into export. Extra local product tools are off by default; enable them in review notes only when wanted. New URL builds include an initial element-geometry layout check when capture time allows. This is not a pixel similarity score or WordPress validation. Rebuild existing saved drafts to use these converter changes. See CONVERSION-REVIEW.md for test scope and outstanding delivery checks.
+
+## 0.4.12 — conversion capacity and delivery review
+
+- Stop conversion from the progress bar or conversion dialog. Cancellation propagates to queued jobs, Chromium, source downloads and AI fetches. A provider can still bill a request it already accepted.
+- Each warm worker admits two conversions and queues at most six for up to 15 seconds. Excess work is rejected rather than retaining unbounded browser processes. This is not an account-wide quota or durable distributed queue.
+- Source asset downloads are limited to four concurrent requests; cached response bodies are capped at 24 MB. There is a 110-second build deadline and stream heartbeats.
+- Delivery checklist highlights missing images, unassigned buttons, source links, form placeholders, product backend connections and initial layout drift. ZIP reports include a fresh content checklist.
+- 95 automated checks, including a 100-caller admission test and actual route streaming/cancellation. These are controlled tests, not a measured 100-user production capacity claim.
+- See [SAAS-UPGRADE.md](SAAS-UPGRADE.md) for remaining production acceptance work.
 
 ## 0.4.11 — native import layout corrections
 

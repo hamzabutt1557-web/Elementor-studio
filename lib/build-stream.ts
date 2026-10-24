@@ -3,8 +3,12 @@ import { responseError } from "./client-api";
 export async function streamBuild<T>(
   body: unknown,
   progress: (message: string) => void,
+  external?: AbortSignal,
 ): Promise<T> {
   const controller = new AbortController();
+  const abort = () => controller.abort(external?.reason);
+  if (external?.aborted) abort();
+  else external?.addEventListener("abort", abort, { once: true });
   const timer = setTimeout(() => controller.abort(), 130000);
   try {
     const response = await fetch("/api/build", {
@@ -49,10 +53,12 @@ export async function streamBuild<T>(
       reader.releaseLock();
     }
   } catch (error) {
+    if (external?.aborted) throw new Error("Conversion cancelled. Completed drafts are kept; an AI request already sent may still be billed.");
     if (controller.signal.aborted)
       throw new Error("Conversion timed out. No automatic retry was made.");
     throw error;
   } finally {
     clearTimeout(timer);
+    external?.removeEventListener("abort", abort);
   }
 }

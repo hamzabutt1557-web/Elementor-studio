@@ -49,3 +49,17 @@ test("build stream rejects truncated successful HTTP responses", async (t) => {
     /ended before the draft/,
   );
 });
+test("caller cancellation aborts the network request without retry", async(t)=>{
+ const caller = new AbortController();
+ let calls=0;
+ t.mock.method(globalThis,"fetch",async(_url: string | URL | Request,init?: RequestInit)=>{
+   calls++;
+   return await new Promise<Response>((_resolve,reject)=>{
+     init?.signal?.addEventListener("abort",()=>reject(new Error("aborted")),{once:true});
+   });
+ });
+ const pending=streamBuild({},()=>{},caller.signal);
+ caller.abort();
+ await assert.rejects(pending,/Conversion cancelled/);
+ assert.equal(calls,1);
+});

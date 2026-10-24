@@ -1,3 +1,4 @@
+import { buildCapacity } from "@/lib/build-capacity";
 import { ownerApiAccess } from "@/lib/owner-access";
 import { apiProviderSchema } from "@/lib/api-provider";
 import { briefDesign, nodeCount } from "@/lib/design";
@@ -27,7 +28,13 @@ export async function POST(req: Request) {
     const connection = body.connection
       ? apiProviderSchema.parse(body.connection)
       : undefined;
+    const controller = new AbortController();
+    const deadline = AbortSignal.timeout(110000);
+    const signal = AbortSignal.any([req.signal, controller.signal, deadline]);
     const run = async (progress: (message: string) => void) => {
+      const release = await buildCapacity.acquire(signal, () => progress("Waiting for an available conversion slot…"));
+      try {
+      signal.throwIfAborted();
       progress("Starting conversion…");
       let capture;
       if (body.route === "brief") {
@@ -41,7 +48,7 @@ export async function POST(req: Request) {
           capture: "brief",
         };
       } else {
-        capture = await crawl(body.input, progress);
+        capture = await crawl(body.input, progress, signal);
       }
       let design = capture.design;
       let usage: {
@@ -69,7 +76,7 @@ export async function POST(req: Request) {
           const cap = Number(body.budget);
           if (!Number.isFinite(cap) || cap < 0 || cap > 50)
             throw new Error("Set a budget between $0 and $50.");
-          const ai = await refine(design, cap, connection);
+          const ai = await refine(design, cap, connection, signal);
           design = ai.design;
           usage = ai.usage;
         } catch (e) {
@@ -81,6 +88,7 @@ export async function POST(req: Request) {
           );
         }
       }
+      signal.throwIfAborted();
       progress("Preparing preview…");
       return {
         ...capture,
@@ -98,19 +106,21 @@ export async function POST(req: Request) {
           store: "Not connected",
         },
       };
+      } finally { release(); }
     };
     if (req.headers.get("accept")?.includes("application/x-ndjson")) {
       let cancelled = false;
       const encoder = new TextEncoder();
       return new Response(
         new ReadableStream({
-          async start(controller) {
+          async start(streamController) {
             const send = (event: unknown) => {
               if (!cancelled)
-                controller.enqueue(
+                streamController.enqueue(
                   encoder.encode(JSON.stringify(event) + "\n"),
                 );
             };
+            const heartbeat = setInterval(() => send({ type: "heartbeat" }), 10000);
             try {
               const result = await run((message) =>
                 send({ type: "progress", message }),
@@ -118,13 +128,15 @@ export async function POST(req: Request) {
               send({ type: "result", result });
             } catch (error) {
               const detail = await errorResponse(error).json();
-              send({ type: "error", message: detail.error });
+              send({ type: "error", message: signal.aborted ? (deadline.aborted ? "Conversion reached its time limit. No automatic retry was made." : "Conversion cancelled.") : detail.error });
             } finally {
-              if (!cancelled) controller.close();
+              clearInterval(heartbeat);
+              if (!cancelled) streamController.close();
             }
           },
           cancel() {
             cancelled = true;
+            controller.abort();
           },
         }),
         {

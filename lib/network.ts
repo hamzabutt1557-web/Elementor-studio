@@ -64,7 +64,9 @@ export async function safeFetch(
   raw: string,
   limit = 2_000_000,
   redirects = 0,
+  signal?: AbortSignal,
 ): Promise<{ body: Buffer; type: string; url: string; status: number }> {
+  signal?.throwIfAborted();
   if (redirects > 4) throw new Error("Too many redirects.");
   const u = normalizeUrl(raw);
   const host = u.hostname.replace(/^\[|\]$/g, "");
@@ -126,7 +128,10 @@ export async function safeFetch(
       },
     );
     const deadline = setTimeout(() => req.destroy(new Error("The website exceeded the request deadline.")), 15000);
-    req.once("close", () => clearTimeout(deadline));
+    const abort = () => req.destroy(new Error("Conversion cancelled."));
+    signal?.addEventListener("abort", abort, { once: true });
+    if (signal?.aborted) abort();
+    req.once("close", () => { clearTimeout(deadline); signal?.removeEventListener("abort", abort); });
     req.setTimeout(12000, () =>
       req.destroy(new Error("The website took too long to respond.")),
     );
@@ -134,7 +139,7 @@ export async function safeFetch(
     req.end();
   });
   if (result.location)
-    return safeFetch(new URL(result.location, u).href, limit, redirects + 1);
+    return safeFetch(new URL(result.location, u).href, limit, redirects + 1, signal);
   if (result.status >= 400)
     throw new Error(
       `The website returned HTTP ${result.status}. Try another public page.`,

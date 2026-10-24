@@ -1,7 +1,7 @@
 {
-  "version": "0.4.11",
+  "version": "0.4.12",
   "checked_at": "2026-10-24",
-  "automated_tests": 86,
+  "automated_tests": 95,
   "automated_tests_status": "passed",
   "typecheck": "passed",
   "production_build": "passed",
@@ -275,7 +275,7 @@
     }
   },
   "deployment": {
-    "status": "user approved production release; deployment verification tracked separately"
+    "status": "release prepared; verify commit via Vercel"
   },
   "dependency_audit": {
     "status": "0 vulnerabilities reported after patch updates",
@@ -285,5 +285,16 @@
   },
   "local_production_smoke": {
     "status": "not completed; local server smoke check did not return a result"
+  },
+  "capacity_validation": {
+    "scope": "per warm worker; no distributed persistence or quota",
+    "max_active_conversions": 2,
+    "max_queued_conversions": 6,
+    "queue_timeout_seconds": 15,
+    "build_deadline_seconds": 110,
+    "max_asset_downloads_in_parallel": 4,
+    "cache_body_budget_bytes": 24000000,
+    "tests": "100 synthetic callers never exceed 2 active slots; FIFO, overload, queue timeout, cancellation, real brief route and stream disconnection passed",
+    "production_load_test": "not performed"
   }
 }

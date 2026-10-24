@@ -45,7 +45,9 @@ export async function refine(
   design: Design,
   budget: number,
   override?: ApiProvider,
+  signal?: AbortSignal,
 ) {
+  signal?.throwIfAborted();
   const custom = override ? connection(override) : undefined;
   if (!custom) assertServerAiAccess();
   budget = serverBudget(budget);
@@ -112,7 +114,7 @@ export async function refine(
           max_tokens: maxOutput,
           response_format: { type: "json_object" },
         }),
-        signal: AbortSignal.timeout(60000),
+        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(60000)]) : AbortSignal.timeout(60000),
       },
     );
     if (!response.ok)

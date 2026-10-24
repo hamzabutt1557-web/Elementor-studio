@@ -1,3 +1,4 @@
+import { CapacityError } from "./build-capacity";
 import { ZodError } from "zod";
 export async function readBody(req: Request, limit = 350000) {
   if (Number(req.headers.get("content-length") || 0) > limit)
@@ -28,7 +29,7 @@ export function errorResponse(e: unknown) {
             ? e.message
             : "This request could not be completed.",
     },
-    { status: 400 },
+    { status: e instanceof CapacityError ? 429 : 400, headers: e instanceof CapacityError ? { "Retry-After": "15" } : undefined },
   );
 }
 export function sameOrigin(req: Request) {

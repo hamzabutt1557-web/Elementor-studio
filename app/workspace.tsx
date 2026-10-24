@@ -1,4 +1,5 @@
 "use client";
+import { qualityReport } from "@/lib/quality-report";
 import type { LayoutAudit } from "@/lib/layout-audit";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -223,6 +224,8 @@ export default function Workspace({
   const [selected, setSelected] = useState<string[]>([]);
   const [results, setResults] = useState<Result[]>([]);
   const [active, setActive] = useState(0);
+  const buildController = useRef<AbortController | null>(null);
+  useEffect(() => () => buildController.current?.abort(), []);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -289,6 +292,7 @@ export default function Workspace({
   }, []);
   const unknownCost = results.some((r) => r.usage.cost === null);
   const current = results[active];
+  const deliveryQuality = current ? qualityReport(current.design, current.layoutAudit) : null;
   const total = results.reduce(
     (a, r) => ({
       input: a.input + r.usage.input,
@@ -327,6 +331,7 @@ export default function Workspace({
     }
   }
   async function build(demo = false) {
+    if (buildController.current) return;
     const source = demo ? demoBrief : input;
     if (!source.trim())
       return setError(
@@ -356,6 +361,8 @@ export default function Workspace({
     setDrawer(null);
     setLive(false);
     setConversionPreview(true);
+    const controller = new AbortController();
+    buildController.current = controller;
     let completed = 0;
     let failures = 0;
     const targets =
@@ -365,6 +372,7 @@ export default function Workspace({
           ? selected
           : [source];
     for (let i = 0; i < targets.length; i++) {
+      if (controller.signal.aborted) break;
       setConversionSource(demo || route === "brief" ? "" : targets[i]);
       setStatus(
         `${demo || route === "brief" ? "Arranging your brief" : "Capturing and mapping page"} ${i + 1} of ${targets.length}…`,
@@ -393,6 +401,7 @@ export default function Workspace({
           },
           (message) =>
             setStatus(`Page ${i + 1} of ${targets.length} · ${message}`),
+          controller.signal,
         );
         const first = completed === 0;
         completed++;
@@ -404,11 +413,12 @@ export default function Workspace({
       }
     }
     setStatus(
-      failures
+      controller.signal.aborted ? `Stopped. ${completed} completed drafts kept.` : failures
         ? `${targets.length - failures} pages completed. ${failures} need attention.`
         : "Your editable draft is ready for review.",
     );
     setBusy(false);
+    buildController.current = null;
     if (completed) {
       setDrawer(null);
       setConversionPreview(false);
@@ -1203,6 +1213,7 @@ export default function Workspace({
                   )}
                   <span>{status}</span>
                   {busy && <span className="live-dot" />}
+                  {busy && buildController.current && <button type="button" onClick={() => buildController.current?.abort()}>Stop conversion</button>}
                 </div>
               )}
               {current && (
@@ -1321,6 +1332,13 @@ export default function Workspace({
                       Similarity: unmeasured
                     </span>
                   </div>
+                  <details className="capture-review" open>
+                    <summary>Delivery checklist · {deliveryQuality?.actionItems} items need work</summary>
+                    <p>{deliveryQuality?.note}</p>
+                    <ul>{deliveryQuality?.issues.map(issue => (
+                      <li key={issue.code}><strong>{issue.severity === "action" ? "Action" : "Review"} · {issue.count}</strong> — {issue.message}</li>
+                    ))}</ul>
+                  </details>
                   {current.layoutAudit && (
                     <details
                       className="capture-review"
@@ -1591,6 +1609,7 @@ export default function Workspace({
           status={status}
           error={error}
           busy={busy}
+          onCancelBuild={() => buildController.current?.abort()}
           onClose={() => setConversionPreview(false)}
         />
       )}

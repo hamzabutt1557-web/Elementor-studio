@@ -6,12 +6,14 @@ export default function ConversionPreview({
   error,
   busy,
   onClose,
+  onCancelBuild,
 }: {
   source: string;
   status: string;
   error: string;
   busy: boolean;
   onClose: () => void;
+  onCancelBuild?: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function ConversionPreview({
     >
       <header className="live-toolbar">
         <strong id="conversion-title">Compare preview</strong>
+        {busy && onCancelBuild && <button onClick={onCancelBuild}>Stop conversion</button>}
         <button onClick={onClose}>Close ×</button>
       </header>
       <p className="live-status">
