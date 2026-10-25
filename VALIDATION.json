@@ -1,7 +1,7 @@
 {
-  "version": "0.4.12",
-  "checked_at": "2026-10-24",
-  "automated_tests": 95,
+  "version": "0.4.13",
+  "checked_at": "2026-10-25",
+  "automated_tests": 97,
   "automated_tests_status": "passed",
   "typecheck": "passed",
   "production_build": "passed",
@@ -9,7 +9,7 @@
     "7.4": "fonts, globals, native layout, CSS cache refresh passed",
     "8.3": "fonts, globals, native layout, CSS cache refresh passed"
   },
-  "controlled_geometry": "33 device cases passed, p90 drift <=24px",
+  "controlled_geometry": "36 device cases passed, p90 drift <=24px",
   "real_site_geometry": {
     "source": "https://bls.uk.com/collections/panties",
     "reports": [
@@ -116,28 +116,35 @@
     "devices": [
       {
         "device": "desktop",
-        "elements": 20,
+        "elements": 21,
         "max_drift_px": 0
       },
       {
         "device": "tablet",
-        "elements": 20,
+        "elements": 21,
         "max_drift_px": 0
       },
       {
         "device": "mobile",
-        "elements": 20,
+        "elements": 21,
         "max_drift_px": 0
       }
     ],
-    "editor_model_edit_save_frontend_verified": true
+    "editor_model_edit_save_frontend_verified": true,
+    "search": {
+      "placeholder_edit_save": "passed",
+      "local_search_result": "passed",
+      "empty_results": "passed",
+      "requires": "Studio importer active; WordPress search uses the destination site"
+    }
   },
   "limitations": [
     "No 100% cloning guarantee",
-    "Forms remain labelled placeholders; commerce backend is not cloned",
+    "Contact forms remain labelled placeholders; commerce backend is not cloned",
     "Captured original is a desktop snapshot, not an interactive live site",
     "Source fonts remain external URLs and require source availability",
-    "Paid AI provider calls not exercised"
+    "Paid AI provider calls not exercised",
+    "Recognised search inputs are supported; contact forms and source-specific product filters still require integration."
   ],
   "previous_release_validation": {
     "deployment": {

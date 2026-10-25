@@ -15,6 +15,7 @@ async function main(){
  const base={paddingBox:[0,0,0,0],marginBox:[0,0,0,0],fontFamily:'Arial',fontWeight:'400',fontSize:16,lineHeight:24,color:'#172323',width:100} as any;
  const design=validateDesign({title:'Import QA',source:'https://example.com/',assets:{[asset]:'data:image/webp;base64,'+bytes.toString('base64')},warnings:[],nodes:[{id:'aa000001',kind:'container',style:{...base,gap:0,direction:'column'},children:[
  {id:'aa000002',kind:'container',style:{...base,direction:'row',justify:'space-between',alignItems:'center',paddingBox:[20,24,20,24],minHeight:100,background:'#eaf2ff',gap:20},children:[{id:'aa000003',kind:'image',url:asset,alt:'Local logo',style:{...base,width:10,height:50,objectFit:'contain'},children:[]},{id:'aa000004',kind:'heading',text:'Studio import test',level:1,style:{...base,fontSize:30,lineHeight:36,width:60},children:[]},{id:'aa000005',kind:'button',text:'Contact',url:'https://example.com/contact',style:{...base,width:20,paddingBox:[10,16,10,16],background:'#1155aa',color:'#ffffff'},children:[]}]},
+ {id:'aa000009',kind:'search',text:'Find a page',style:{...base,paddingBox:[10,12,10,12],borderWidth:1,borderStyle:'solid',borderColor:'#222222'},children:[]},
  {id:'aa000006',kind:'container',style:{...base,layout:'grid',columns:[1,1,1],gap:24,rowGap:24,paddingBox:[24,24,24,24]},tablet:{columns:[1,1]},mobile:{columns:[1]},children:[1,2,3].map(i=>({id:'ab00000'+i,kind:'container' as const,style:{...base,gap:12,direction:'column'},children:[{id:'ac00000'+i,kind:'image' as const,url:asset,alt:'Product '+i,style:{...base,height:200,objectFit:'cover' as const},children:[]},{id:'ad00000'+i,kind:'heading' as const,text:'Product '+i,level:2,style:{...base,fontSize:24,lineHeight:30},children:[]},{id:'ae00000'+i,kind:'text' as const,text:'Editable product description',style:base,children:[]}]}))},
  {id:'aa000007',kind:'container',style:{...base,display:'flow-root',minHeight:120,paddingBox:[24,24,24,24],background:'#172323',color:'#ffffff',gap:0},children:[{id:'aa000008',kind:'text',text:'Footer contact information',style:{...base,color:'#ffffff',display:'inline-block',float:'left',width:50,flexShrink:0,verticalAlign:'top'},mobile:{float:'none',clear:'both',width:100},children:[]}]}
  ]}]});
@@ -39,7 +40,7 @@ async function main(){
  report.devices.push({device,images,boxes:actual.map(a=>{const e=expected.find(e=>e.id===a.id);return{actual:a,expected:e,drift:e?Math.max(Math.abs(a.x-e.x),Math.abs(a.y-e.y),Math.abs(a.width-e.width),Math.abs(a.height-e.height)):null}})});
  }
  for(const device of report.devices){
-   assert.equal(device.boxes.length,20,'All native elements must be measured');
+   assert.equal(device.boxes.length,21,'All native elements must be measured');
    assert.equal(device.images.length,4,'All packaged images must be present');
    assert.ok(device.images.every((i:any)=>i.loaded&&i.src.startsWith('http://127.0.0.1:8777/wp-content/uploads/')),'Images must be served from the WordPress Media Library');
    assert.ok(device.boxes.every((b:any)=>b.expected&&b.drift<=2),'Native layout must match preview within 2px');
@@ -51,13 +52,27 @@ async function main(){
    const heading=w.elementor.elements.at(0).get('elements').at(0).get('elements').at(1);
    if(heading.get('id')!=='aa000004') throw new Error('Unexpected heading');
    heading.get('settings').set('title','Edited in Elementor');
+   w.elementor.elements.at(0).get('elements').at(1).get('settings').set('studio_search_placeholder','Search our site');
    w.$e.internal('document/save/set-is-modified',{status:true});
    await w.$e.run('document/save/draft');
  });
  await page.goto('http://127.0.0.1:8777/?page_id='+id+'&preview=true',{waitUntil:'load'});
  report.editorSaveVerified=await page.locator('.elementor-element-aa000004').innerText()==='Edited in Elementor';
  if(!report.editorSaveVerified)throw new Error('Edited heading was not persisted');
- fs.writeFileSync('.qa/wordpress-test/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify({draft:id,devices:report.devices.map((d:any)=>({device:d.device,elements:d.boxes.length,maxDriftPx:Math.max(...d.boxes.map((b:any)=>b.drift))})),editorSaveVerified:report.editorSaveVerified}));
+ const search=page.locator('.estudio-search-input');
+ assert.equal(await search.getAttribute('placeholder'),'Search our site');
+ await search.fill('StudioSearchFixtureUnique');
+ await Promise.all([page.waitForURL(/s=StudioSearchFixtureUnique/),search.press('Enter')]);
+ assert.equal(new URL(page.url()).origin,'http://127.0.0.1:8777');
+ assert.ok((await page.locator('body').innerText()).includes('StudioSearchFixtureUnique result'));
+ report.localSearchVerified=true;
+ await page.goto('http://127.0.0.1:8777/?s=NoMatchStudioFixture729183',{waitUntil:'load'});
+ const empty=await page.locator('body').innerText();
+ assert.ok(!empty.includes('StudioSearchFixtureUnique result'));
+ assert.match(empty,/nothing|no results|could not find|sorry/i);
+ report.emptySearchVerified=true;
+
+ fs.writeFileSync('.qa/wordpress-test/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify({draft:id,devices:report.devices.map((d:any)=>({device:d.device,elements:d.boxes.length,maxDriftPx:Math.max(...d.boxes.map((b:any)=>b.drift))})),editorSaveVerified:report.editorSaveVerified,localSearchVerified:report.localSearchVerified,emptySearchVerified:report.emptySearchVerified}));
  }finally{await browser.close();await api.dispose()}
 }
 main().catch(e=>{console.error(e);process.exit(1)});

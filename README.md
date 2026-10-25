@@ -1,4 +1,4 @@
-# Elementor Studio 0.4.12
+# Elementor Studio 0.4.13
 
 URL or client brief → editable draft → live edit/compare → native Elementor JSON or WordPress ZIP package.
 This is a page draft generator for owned/authorized sources. No similarity percentage or arbitrary-site functional clone is promised.
@@ -138,6 +138,14 @@ In Preview & edit, double-click a heading or paragraph to type directly on the c
 ## Conversion-first update (0.4.6)
 
 Reference capture now preserves body spacing, mixed text and decorative boxes, resets desktop-only styles at smaller screens, retains reverse flex directions and carries native width limits into export. Extra local product tools are off by default; enable them in review notes only when wanted. New URL builds include an initial element-geometry layout check when capture time allows. This is not a pixel similarity score or WordPress validation. Rebuild existing saved drafts to use these converter changes. See CONVERSION-REVIEW.md for test scope and outstanding delivery checks.
+
+## 0.4.13 — editable WordPress site search
+
+- Recognised search inputs become a Studio Site Search Elementor widget instead of a text placeholder. Search-type fields, search roles and search-form actions are recognised.
+- The widget can be added from the editor; its placeholder and typography are editable. The importer registers it for free Elementor, so keep the plugin active.
+- Queries go to the destination WordPress search endpoint. Source-site form actions and typed search values are not copied.
+- Preview shows the field; querying content starts after WordPress import. Source-specific product filters and contact-form submissions remain separate integrations.
+- Local acceptance includes ZIP import, 21-element geometry at three widths, Elementor edit/save, search results and the empty-results case.
 
 ## 0.4.12 — conversion capacity and delivery review
 

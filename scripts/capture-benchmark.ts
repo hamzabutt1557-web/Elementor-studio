@@ -10,6 +10,8 @@ import { compareLayout, previewGeometry } from "../lib/layout-audit";
 import { viewportWidths } from "../lib/viewports";
 import assert from "node:assert/strict";
 const fixtures = {
+  search: `<main><form role="search" action="https://source.example/search"><input type="search" placeholder="Search products" value="private-typed-query" style="font:16px/24px Arial;padding:8px 12px;border:1px solid #222;width:240px"></form><form><input type="email" placeholder="Email" value="private@example.test"></form></main>`,
+
   floatedColumns: `<main><div style="display:flow-root;border-bottom:2px solid #222"><aside style="float:left;width:25%;padding:12px">Sidebar</aside><section style="float:right;width:70%;padding:12px"><h2>Product content</h2><p>Floated columns preserve their source positions.</p></section></div><footer style="clear:both">Footer after floats</footer></main>`,
 
   negativeGutters: `<div style="padding:30px"><div style="margin:0 -15px;display:flex"><article style="width:33.333%;padding:0 15px"><p>First product</p></article><article style="width:33.333%;padding:0 15px"><p>Second product</p></article><article style="width:33.333%;padding:0 15px"><p>Third product</p></article></div></div>`,
@@ -81,6 +83,12 @@ const css = `*{box-sizing:border-box}body{margin:0;padding:24px;font-family:Aria
       const flatten = (nodes: DesignNode[]): DesignNode[] =>
         nodes.flatMap((n) => [n, ...flatten(n.children)]);
       const nodes = flatten(design.nodes);
+      if (name === "search") {
+        assert.equal(nodes.filter(n => n.kind === "search").length, 1);
+        assert.ok(nodes.some(n => n.kind === "text" && n.text === "[Form field: Email]"));
+        assert.ok(!JSON.stringify(design).includes("private-typed-query"));
+        assert.ok(!JSON.stringify(design).includes("private@example.test"));
+      }
       if (name === "productRatios") {
         const images = nodes.filter((n) => n.kind === "image");
         assert.equal(images.length, 3);

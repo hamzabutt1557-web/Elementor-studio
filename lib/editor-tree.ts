@@ -92,7 +92,7 @@ export function addSection(design: Design, parent?: string): Design {
 export function addWidget(
   design: Design,
   parent: string,
-  kind: "heading" | "text" | "button" | "image",
+  kind: "heading" | "text" | "button" | "image" | "search",
 ): Design {
   const draft = structuredClone(design);
   const find = (nodes: DesignNode[]): DesignNode | undefined => {
@@ -110,7 +110,7 @@ export function addWidget(
     kind,
     ...(kind === "image" ? { alt: "New image" } : {}),
     text:
-      kind === "image"
+      kind === "search" ? "Search this site" : kind === "image"
         ? undefined
         : kind === "heading"
           ? "New heading"

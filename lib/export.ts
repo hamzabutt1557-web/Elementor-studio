@@ -142,7 +142,7 @@ export async function exportZip(inputs: unknown[], media = true) {
 5. Review source links and any images not packaged. Set your navigation and homepage in WordPress. Shared header/footer and live products/cart/checkout require separate setup.
 6. Optional manual route: import each templates/*.json through Elementor Saved Templates, then insert into a page.
 7. Optional: check Add imported colours and fonts as new Elementor Global Styles in the importer. It appends custom Kit styles without replacing existing styles. Bare JSON keeps direct values.
-8. Navigation drawers and expandable FAQ sections use the included importer plugin runtime. Keep the importer active for these interactions. Bare JSON retains editable content but does not install this runtime.
+8. Site search widgets require the Studio importer to stay active, including with bare JSON imports. Search runs on the destination WordPress site, not on the source site. Navigation drawers and expandable FAQ sections use the included importer plugin runtime. Keep the importer active for these interactions. Bare JSON retains editable content but does not install this runtime.
 9. Images are optimized to WebP (up to 1600 px). Files exceeding download budgets stay linked to the source; review the media report.
 10. This release has automated data-contract tests and controlled DOM layout checks. A controlled page has passed local WordPress ZIP import, media loading and Elementor edit/save verification. Your exported page still needs testing on staging. No complete store or guaranteed exact clone is included. Optional local product tools change the captured layout and are disabled unless you enable them.
 

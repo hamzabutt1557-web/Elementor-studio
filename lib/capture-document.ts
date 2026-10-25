@@ -253,8 +253,11 @@ export function captureDocument() {
       rect.top < 0
     )
       return [];
+    const isSearchField = tag === "input" && ["text", "search", ""].includes((el.getAttribute("type") || "").toLowerCase()) &&
+      (el.getAttribute("type")?.toLowerCase() === "search" || !!el.closest('[role="search"]') ||
+        /(?:^|\/)search(?:[/?#]|$)/i.test(el.closest("form")?.getAttribute("action") || ""));
     if (
-      ["input", "textarea", "select"].includes(tag) &&
+      !isSearchField && ["input", "textarea", "select"].includes(tag) &&
       el.getAttribute("type") !== "hidden"
     ) {
       warning.add(
@@ -535,6 +538,11 @@ export function captureDocument() {
       kind = "button";
       text = visibleText(el) || el.getAttribute("aria-label") || "Menu";
       url = "#";
+    } else if (isSearchField) {
+      kind = "search";
+      // Do not copy a typed query or source-site form endpoint.
+      text = (el.getAttribute("placeholder") || "Search").slice(0, 200);
+      warning.add("Search becomes a local WordPress site search after import. Keep the Studio importer active. Source-specific product filters are not copied.");
     } else if (["input", "textarea", "select"].includes(tag)) {
       kind = "text";
       text =

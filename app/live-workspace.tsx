@@ -1053,7 +1053,7 @@ export default function LiveWorkspace({
                     >
                       Add inside section
                     </button>
-                    {(["heading", "text", "button", "image"] as const).map(
+                    {(["heading", "text", "button", "image", "search"] as const).map(
                       (kind) => (
                         <button
                           key={kind}
@@ -1204,9 +1204,13 @@ export default function LiveWorkspace({
                       </select>
                     </label>
                   ))}
+                {node.kind === "search" && <label>Search placeholder
+                  <input defaultValue={node.text || "Search"} maxLength={200} onBlur={(e) => patch({ text: e.target.value })} />
+                  <small>Search runs on your WordPress site after import. Keep the Studio importer active.</small>
+                </label>}
                 {(node.kind === "heading" ||
                   node.kind === "text" ||
-                  node.kind === "button") && (
+                  node.kind === "button" || node.kind === "search") && (
                   <FontPicker
                     value={computedStyle.fontFamily || ""}
                     onChange={(value) => style("fontFamily", value)}

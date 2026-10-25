@@ -313,8 +313,10 @@ function convert(n: DesignNode, inner = false): Element {
         button: "button",
         image: "image",
         video: "video",
+        search: "estudio-search",
       } as const
     )[n.kind];
+    if (n.kind === "search") e.settings.studio_search_placeholder = (n.text || "Search").slice(0, 200);
     if (n.kind === "heading") {
       e.settings.title = richText(n);
       e.settings.header_size = "h" + (n.level || 2);
@@ -476,6 +478,8 @@ export function previewHtml(input: Design, editable = false) {
         : `<section ${attrs}>${n.children.map(render).join("")}</section>`;
     if (n.kind === "heading")
       return `<h${n.level || 2} ${attrs}>${richText(n)}</h${n.level || 2}>`;
+    if (n.kind === "search")
+      return `<div ${attrs}><input class="estudio-search-input" type="search" aria-label="Search this site" placeholder="${escape(n.text || "Search")}" title="Search connects to your WordPress site after import"></div>`;
     if (n.kind === "video") {
       const v = videoSource(n.url || "");
       return v.type === "hosted"
