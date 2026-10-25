@@ -6,6 +6,12 @@
  * Requires PHP: 7.4
  */
 if (!defined('ABSPATH')) exit;
+// Register search styling independently of imported-page metadata so bare JSON
+// imports and widgets added directly inside Elementor also receive it.
+add_action('elementor/frontend/after_register_styles', function() {
+  wp_register_style('estudio-search', false, array(), '0.4.13');
+  wp_add_inline_style('estudio-search', '.estudio-search-form{margin:0;padding:0;display:block}.estudio-search-input{box-sizing:border-box;display:block;width:100%;min-width:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;line-height:inherit;box-shadow:none}.estudio-search-input::placeholder{color:inherit;opacity:1}.estudio-search-input:focus-visible{outline:2px solid currentColor;outline-offset:2px}');
+});
 // A free Elementor widget backed by WordPress's local search endpoint.
 add_action('elementor/widgets/register', function($manager) {
   if (!class_exists('Estudio_Search_Widget')) {
@@ -13,6 +19,7 @@ add_action('elementor/widgets/register', function($manager) {
       public function get_name() { return 'estudio-search'; }
       public function get_title() { return 'Studio Site Search'; }
       public function get_icon() { return 'eicon-search'; }
+      public function get_style_depends() { return array('estudio-search'); }
       public function get_categories() { return array('general'); }
       protected function register_controls() {
         $this->start_controls_section('studio_search_content', array('label'=>'Site search'));

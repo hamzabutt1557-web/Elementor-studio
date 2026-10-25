@@ -135,7 +135,8 @@
       "placeholder_edit_save": "passed",
       "local_search_result": "passed",
       "empty_results": "passed",
-      "requires": "Studio importer active; WordPress search uses the destination site"
+      "requires": "Studio importer active; WordPress search uses the destination site",
+      "standalone_widget_without_import_metadata": "CSS and destination verified"
     }
   },
   "limitations": [
