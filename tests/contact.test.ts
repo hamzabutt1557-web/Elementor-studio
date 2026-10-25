@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {briefDesign,nodeSchema} from '../lib/design';
+import {addWidget} from '../lib/editor-tree';
+import {toElementor,previewHtml} from '../lib/elementor';
+import {qualityReport} from '../lib/quality-report';
+test('contact form exports as editable native widget and preview cannot submit',()=>{
+ const base=briefDesign('Contact','Contact','business');
+ const d=addWidget(base,base.nodes[0].id,'contact');
+ const n=d.nodes[0].children.at(-1)!;
+ assert.equal(n.kind,'contact');assert.equal(n.url,undefined);assert.ok(nodeSchema.safeParse(n).success);
+ n.text='<script>alert(1)</script>';
+ const widget=toElementor(d).content[0].elements.at(-1)!;
+ assert.equal(widget.widgetType,'estudio-contact');
+ assert.equal(widget.settings.studio_contact_button,n.text);
+ const html=previewHtml(d);
+ assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
+ assert.ok(html.includes('Preview only. Submissions work after publishing in WordPress.'));
+ assert.equal(qualityReport(d).issues.find(x=>x.code==='contact-runtime')?.severity,'review');
+ assert.ok(!base.nodes[0].children.some(x=>x.kind==='contact'));
+});

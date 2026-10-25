@@ -1,4 +1,4 @@
-# Elementor Studio 0.4.13
+# Elementor Studio 0.4.14
 
 URL or client brief → editable draft → live edit/compare → native Elementor JSON or WordPress ZIP package.
 This is a page draft generator for owned/authorized sources. No similarity percentage or arbitrary-site functional clone is promised.
@@ -170,3 +170,13 @@ Reference capture now preserves body spacing, mixed text and decorative boxes, r
 Complete application folders are restored alongside the 0.4.9 Layers editor and importer CSS refresh. Capture now retains negative-margin row widths above 100%, reserved media slots, and accessible source font faces. Original comparison starts on the captured desktop reference when available. The node budget is 3,000 and incomplete browser captures fail explicitly. Templates use compact JSON and enforce the importer's 3 MB limit.
 
 Custom source font URLs remain external, including after ZIP import. Install the included importer to load them in WordPress; manual JSON does not register this metadata. These fixes do not establish universal visual equivalence. Header/filter fidelity and end-to-end visual acceptance on the target WordPress installation remain open.
+
+## 0.4.14 — local contact inbox
+
+Select a section in Studio, choose **Add contact**, then export and install/update the included importer. Publish the WordPress page. The native **Studio Contact Form** widget has required Name, Email and Message fields; edit their labels and button text in Elementor. Submissions are saved privately in **WordPress → Studio Messages**, accessible to administrators only. No emails are sent.
+
+Validation runs on both client and server. A nonce, honeypot and basic per-address five-message throttle are included. This is not distributed spam protection; proxies share a quota. Keep form pages out of full-page caches so tokens stay fresh. A timed-out request may already have saved: the UI reports uncertainty rather than promising failure. Admins can delete messages using the WordPress inbox; automated retention is not configured.
+
+Source forms are still placeholders: replace them with Add contact when these three fields fit. Arbitrary fields, original backend cloning, uploads, email delivery, WooCommerce checkout and full multi-tenant scaling are not implemented. Preview fields do not submit.
+
+Acceptance: 98 unit tests; local PHP 8.3 / WordPress / Elementor browser submission and private persistence; invalid/empty fields, malformed input, invalid nonce, honeypot, unknown widget and throttling; administrator-only inbox checks; no horizontal overflow at 1440/820/390. The reusable integration checks under scripts/wordpress-contact-* require the isolated .qa WordPress installation and a locally running server on port 8777. Run the fixture before the browser check to reset its local rate-limit bucket; run the storage check afterwards. Never run the fixture on a production WordPress installation.

@@ -17,6 +17,7 @@ export function qualityReport(design: Design, audit?: LayoutAudit) {
     if (!design.source) return false;
     try { return [n.url, n.link, ...(n.runs?.map(r => r.link) || [])].some(link => link && new URL(link).hostname === new URL(design.source!).hostname) && n.kind !== "image" && n.kind !== "video"; } catch { return false; }
   }), "Review links that still lead to the source website.");
+  add("contact-runtime", "review", nodes.filter(n => n.kind === "contact"), "Contact form saves Name, Email and Message to the destination WordPress admin inbox. Publish the page, keep the importer active and exclude it from full-page caching. Email delivery is not configured.");
   add("search-runtime", "review", nodes.filter(n => n.kind === "search"), "Search uses the destination WordPress site. Keep the Studio importer active and verify indexed content.");
   add("commerce", "action", nodes.filter(n => n.product), "Product cards are captured content. Connect WooCommerce products, stock, cart and checkout separately.");
   const layout = audit?.status === "checked" ? audit.devices : [];

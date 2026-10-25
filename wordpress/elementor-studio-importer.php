@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Elementor Studio Importer
  * Description: Import an Elementor Studio ZIP as editable draft WordPress pages with packaged media.
- * Version: 0.4.13
+ * Version: 0.4.14
  * Requires PHP: 7.4
  */
 if (!defined('ABSPATH')) exit;
 // Register search styling independently of imported-page metadata so bare JSON
 // imports and widgets added directly inside Elementor also receive it.
 add_action('elementor/frontend/after_register_styles', function() {
-  wp_register_style('estudio-search', false, array(), '0.4.13');
+  wp_register_style('estudio-search', false, array(), '0.4.14');
   wp_add_inline_style('estudio-search', '.estudio-search-form{margin:0;padding:0;display:block}.estudio-search-input{box-sizing:border-box;display:block;width:100%;min-width:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;line-height:inherit;box-shadow:none}.estudio-search-input::placeholder{color:inherit;opacity:1}.estudio-search-input:focus-visible{outline:2px solid currentColor;outline-offset:2px}');
 });
 // A free Elementor widget backed by WordPress's local search endpoint.
@@ -42,6 +42,116 @@ add_action('elementor/widgets/register', function($manager) {
   }
   $manager->register(new Estudio_Search_Widget());
 });
+
+// Contact messages stay on the destination WordPress installation.
+add_action('init', function() {
+  register_post_type('estudio_message', array(
+    'labels'=>array('name'=>'Studio Messages','singular_name'=>'Studio Message'),
+    'public'=>false,'publicly_queryable'=>false,'show_ui'=>true,'show_in_rest'=>false,
+    'exclude_from_search'=>true,'rewrite'=>false,'query_var'=>false,
+    'supports'=>array('title','editor'),'map_meta_cap'=>false,
+    'capabilities'=>array_fill_keys(array('edit_post','read_post','delete_post','edit_posts','edit_others_posts','publish_posts','read_private_posts','delete_posts','delete_private_posts','delete_published_posts','delete_others_posts','edit_private_posts','edit_published_posts'), 'manage_options') + array('create_posts'=>'do_not_allow'),
+    'menu_icon'=>'dashicons-email-alt',
+  ));
+});
+function estudio_has_contact_widget($nodes, $id, $depth=0) {
+  if (!is_array($nodes) || $depth > 24) return false;
+  foreach ($nodes as $node) {
+    if (($node['id'] ?? '') === $id && ($node['widgetType'] ?? '') === 'estudio-contact') return true;
+    if (estudio_has_contact_widget($node['elements'] ?? array(), $id, $depth+1)) return true;
+  }
+  return false;
+}
+function estudio_submit_contact() {
+  nocache_headers();
+  if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') wp_send_json_error(array('message'=>'Use the contact form to submit a message.'),405);
+  $read = function($key) { return isset($_POST[$key]) && is_string($_POST[$key]) ? trim(wp_unslash($_POST[$key])) : ''; };
+  $page = absint($read('studio_page'));
+  $widget = $read('studio_widget');
+  if (!preg_match('/^[a-f0-9]{7,8}$/', $widget) || get_post_status($page) !== 'publish' || post_password_required($page) ||
+      !estudio_has_contact_widget(json_decode(get_post_meta($page,'_elementor_data',true),true),$widget) ||
+      !wp_verify_nonce($read('studio_nonce'),'estudio_contact_'.$page.'_'.$widget)) {
+    wp_send_json_error(array('message'=>'This form expired or is unavailable. Refresh the page and try again.'),403);
+  }
+  if ($read('studio_website') !== '') wp_send_json_error(array('message'=>'Submission rejected.'),400);
+  $name = sanitize_text_field($read('studio_name'));
+  $email = $read('studio_email');
+  $message = sanitize_textarea_field($read('studio_message'));
+  if ($name === '' || strlen($name)>200 || !is_email($email) || strlen($email)>254 || $message === '' || strlen($message)>10000) {
+    wp_send_json_error(array('message'=>'Enter a name, valid email and message (maximum 10,000 bytes).'),422);
+  }
+  // Basic per-address throttle; shared proxies share the quota. Not a distributed abuse firewall.
+  $key = 'estudio_contact_'.hash_hmac('sha256',$_SERVER['REMOTE_ADDR'] ?? 'unknown',wp_salt());
+  $count = (int)get_transient($key);
+  if ($count >= 5) wp_send_json_error(array('message'=>'Too many messages. Please try again in 10 minutes.'),429);
+  set_transient($key,$count+1,10*MINUTE_IN_SECONDS);
+  $saved = wp_insert_post(wp_slash(array('post_type'=>'estudio_message','post_status'=>'private',
+    'post_title'=>$name,'post_content'=>"Email: ".$email."\nPage: ".$page."\n\n".$message)),true);
+  if (is_wp_error($saved) || !$saved) wp_send_json_error(array('message'=>'Your message could not be saved. Please try again.'),500);
+  wp_send_json_success(array('message'=>'Thank you. Your message has been saved.'));
+}
+add_action('admin_post_estudio_contact','estudio_submit_contact');
+add_action('admin_post_nopriv_estudio_contact','estudio_submit_contact');
+add_action('elementor/frontend/after_register_styles',function() {
+  wp_register_style('estudio-contact',false,array(),'0.4.14');
+  wp_add_inline_style('estudio-contact','.estudio-contact{display:grid;gap:16px;margin:0}.estudio-contact label{display:grid;gap:6px;font:inherit}.estudio-contact input,.estudio-contact textarea{box-sizing:border-box;width:100%;padding:12px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#172033;font:inherit}.estudio-contact textarea{min-height:130px;resize:vertical}.estudio-contact button{padding:12px 20px;border:0;border-radius:6px;background:#147d68;color:#fff;font:inherit;cursor:pointer}.estudio-contact :focus-visible{outline:2px solid #147d68;outline-offset:3px}.estudio-contact button:disabled{opacity:.6;cursor:wait}.estudio-contact .estudio-trap{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}.estudio-contact [role=status]{margin:0}');
+});
+add_action('elementor/frontend/after_register_scripts',function() {
+  wp_register_script('estudio-contact',false,array(),'0.4.14',true);
+  wp_add_inline_script('estudio-contact', <<<'CONTACTJS'
+document.addEventListener('submit',async function(event){
+ const form=event.target;if(!form.matches('.estudio-contact'))return;event.preventDefault();
+ if(form.dataset.busy==='1')return;
+ const button=form.querySelector('button[type=submit]'),status=form.querySelector('[role=status]');
+ form.dataset.busy='1';button.disabled=true;status.textContent='Sending…';
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+ try{const response=await fetch(form.getAttribute('action'),{method:'POST',body:new FormData(form),credentials:'same-origin',signal:controller.signal});const result=await response.json();status.textContent=result.data?.message||'Unable to submit. Please try again.';if(response.ok&&result.success)form.reset();}
+ catch(error){status.textContent='Could not confirm delivery. Please check your connection before trying again.';}
+ finally{clearTimeout(timer);delete form.dataset.busy;button.disabled=false;}
+});
+CONTACTJS
+  );
+});
+add_action('elementor/widgets/register',function($manager) {
+  if (!class_exists('Estudio_Contact_Widget')) {
+    class Estudio_Contact_Widget extends \Elementor\Widget_Base {
+      public function get_name(){return 'estudio-contact';}
+      public function get_title(){return 'Studio Contact Form';}
+      public function get_icon(){return 'eicon-form-horizontal';}
+      public function get_categories(){return array('general');}
+      public function get_style_depends(){return array('estudio-contact');}
+      public function get_script_depends(){return array('estudio-contact');}
+      protected function register_controls(){
+        $this->start_controls_section('studio_contact_content',array('label'=>'Contact form'));
+        foreach(array('name'=>'Name','email'=>'Email','message'=>'Message','button'=>'Send message') as $key=>$label) {
+          $this->add_control('studio_contact_'.$key,array('label'=>ucfirst($key).' label','type'=>\Elementor\Controls_Manager::TEXT,'default'=>$label));
+        }
+        $this->add_control('studio_contact_note',array('type'=>\Elementor\Controls_Manager::RAW_HTML,'raw'=>'Messages are saved in WordPress → Studio Messages (administrators only). Publish this page and keep the importer active. Email notifications are not enabled. Exclude this page from full-page caching so its form token stays fresh.'));
+        $this->end_controls_section();
+        $this->start_controls_section('studio_contact_style',array('label'=>'Form style','tab'=>\Elementor\Controls_Manager::TAB_STYLE));
+        $this->add_group_control(\Elementor\Group_Control_Typography::get_type(),array('name'=>'typography','selector'=>'{{WRAPPER}} .estudio-contact'));
+        $this->add_control('text_color',array('label'=>'Label colour','type'=>\Elementor\Controls_Manager::COLOR,'selectors'=>array('{{WRAPPER}} .estudio-contact'=>'color:{{VALUE}};')));
+        $this->end_controls_section();
+      }
+      protected function render(){
+        $s=$this->get_settings_for_display();$page=get_the_ID();$id=$this->get_id();
+        echo '<form class="estudio-contact" method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
+        echo '<input type="hidden" name="action" value="estudio_contact"><input type="hidden" name="studio_page" value="'.esc_attr($page).'"><input type="hidden" name="studio_widget" value="'.esc_attr($id).'">';
+        wp_nonce_field('estudio_contact_'.$page.'_'.$id,'studio_nonce',false);
+        echo '<label class="estudio-trap" aria-hidden="true">Leave blank<input name="studio_website" tabindex="-1" autocomplete="off"></label>';
+        foreach(array('name'=>'Name','email'=>'Email','message'=>'Message') as $key=>$label){
+          echo '<label>'.esc_html($s['studio_contact_'.$key] ?? $label);
+          if($key==='message')echo '<textarea name="studio_message" required maxlength="10000"></textarea>';
+          else echo '<input name="studio_'.$key.'" type="'.($key==='email'?'email':'text').'" autocomplete="'.$key.'" required maxlength="'.($key==='email'?254:200).'">';
+          echo '</label>';
+        }
+        echo '<button type="submit">'.esc_html($s['studio_contact_button'] ?? 'Send message').'</button><p role="status" aria-live="polite"></p><noscript>JavaScript is required for inline confirmation; submission opens a confirmation response.</noscript></form>';
+      }
+    }
+  }
+  $manager->register(new Estudio_Contact_Widget());
+});
+
 // Free Elementor controls for source flow. Keeping these as native responsive
 // controls lets the owner change the imported flow without editing CSS.
 add_action('elementor/element/after_section_end', function($element, $section_id) {
@@ -85,11 +195,11 @@ function estudio_clean_elements($elements, $depth = 0, &$count = 0) {
     if (++$count > 3000 || !is_array($e) || !preg_match('/^[a-f0-9]{7,8}$/', $e['id'] ?? '')) throw new Exception('Invalid template element.');
     $kind = $e['elType'] ?? '';
     if (!in_array($kind, array('container','widget'), true)) throw new Exception('Unsupported element.');
-    if ($kind === 'widget' && !in_array($e['widgetType'] ?? '', array('heading','text-editor','button','image','video','estudio-search'), true)) throw new Exception('Unsupported widget.');
+    if ($kind === 'widget' && !in_array($e['widgetType'] ?? '', array('heading','text-editor','button','image','video','estudio-search','estudio-contact'), true)) throw new Exception('Unsupported widget.');
     $settings = array();
     foreach (($e['settings'] ?? array()) as $key => $value) {
-      if (!preg_match('/^(hide_desktop|hide_tablet|hide_mobile|studio_search_placeholder|studio_display|studio_float|studio_clear|studio_vertical_align|studio_flex_shrink|paragraph_spacing|text_padding|video_type|hosted_url|youtube_url|vimeo_url|controls|container_type|css_classes|_css_classes|position|_position|_offset_x|_offset_y|z_index|_z_index|overflow|height|grid_column|_grid_column|grid_columns_grid|grid_rows_grid|grid_gaps|_padding|_margin|_border_radius|border_border|border_width|border_color|_border_border|_border_width|_border_color|_background_(background|color|image|position|xpos|ypos|size|bg_width|repeat)|html_tag|link_to|title|header_size|editor|text|link|image|image_size|caption_source|content_width|width|min_height|padding|margin|border_radius|background_(background|color|image|position|xpos|ypos|size|bg_width|repeat)|title_color|button_text_color|text_color|align|typography_(typography|font_size|font_family|font_weight|line_height|letter_spacing|text_transform)|flex_(direction|gap|justify_content|align_items|wrap)|_element_(width|custom_width)|object-fit)(_tablet|_mobile)?$/', $key)) continue;
-      if ($key === 'studio_search_placeholder') {
+      if (!preg_match('/^(hide_desktop|hide_tablet|hide_mobile|studio_contact_(name|email|message|button)|studio_search_placeholder|studio_display|studio_float|studio_clear|studio_vertical_align|studio_flex_shrink|paragraph_spacing|text_padding|video_type|hosted_url|youtube_url|vimeo_url|controls|container_type|css_classes|_css_classes|position|_position|_offset_x|_offset_y|z_index|_z_index|overflow|height|grid_column|_grid_column|grid_columns_grid|grid_rows_grid|grid_gaps|_padding|_margin|_border_radius|border_border|border_width|border_color|_border_border|_border_width|_border_color|_background_(background|color|image|position|xpos|ypos|size|bg_width|repeat)|html_tag|link_to|title|header_size|editor|text|link|image|image_size|caption_source|content_width|width|min_height|padding|margin|border_radius|background_(background|color|image|position|xpos|ypos|size|bg_width|repeat)|title_color|button_text_color|text_color|align|typography_(typography|font_size|font_family|font_weight|line_height|letter_spacing|text_transform)|flex_(direction|gap|justify_content|align_items|wrap)|_element_(width|custom_width)|object-fit)(_tablet|_mobile)?$/', $key)) continue;
+      if ($key === 'studio_search_placeholder' || preg_match('/^studio_contact_(name|email|message|button)$/',$key)) {
         $value = mb_substr(sanitize_text_field((string)$value), 0, 200);
       } elseif (preg_match('/^studio_display(_tablet|_mobile)?$/', $key)) {
         if (!in_array($value, array('','block','flow-root','inline-block','flex','inline-flex','grid','inline-grid'), true)) continue;
@@ -350,12 +460,12 @@ function estudio_screen() {
 // BEGIN STUDIO RUNTIME
 add_action('wp_enqueue_scripts', function () {
   if (!is_singular() || get_post_meta(get_queried_object_id(), '_estudio_interactions', true) !== '1') return;
-  wp_register_style('estudio-runtime', false, array(), '0.4.13'); wp_enqueue_style('estudio-runtime');
+  wp_register_style('estudio-runtime', false, array(), '0.4.14'); wp_enqueue_style('estudio-runtime');
   wp_add_inline_style('estudio-runtime', <<<'ESTUDIOCSS'
 .estudio-search-form{margin:0;padding:0;display:block}.estudio-search-input{box-sizing:border-box;display:block;width:100%;min-width:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;line-height:inherit;box-shadow:none}.estudio-search-input::placeholder{color:inherit;opacity:1}.estudio-search-input:focus-visible{outline:2px solid currentColor;outline-offset:2px}.estudio-node.elementor-widget-button .elementor-button-wrapper{line-height:0}.estudio-node.elementor-widget-button .elementor-button{display:block}body.estudio-runtime .estudio-disclosure:not(.estudio-expanded)>:not(:first-child){display:none!important}body.estudio-runtime .estudio-panel:not(.estudio-open){display:none!important}.estudio-panel{box-sizing:border-box}.estudio-panel.estudio-open{display:flex!important}body.estudio-runtime .estudio-panel{position:fixed!important;top:0;left:0;z-index:10000;max-height:100vh;overflow:auto}body.elementor-editor-active .estudio-panel{position:static!important;height:auto!important;z-index:auto!important}.estudio-panel :focus-visible,[class*="estudio-toggle-"]:focus-visible{outline:2px solid #147d68;outline-offset:3px}.estudio-product img{transition:transform .25s ease}.estudio-product img:hover{transform:scale(1.04)}.estudio-product{overflow:hidden}.estudio-catalog-controls{display:flex;flex-wrap:wrap;gap:12px;padding:16px;align-items:center;background:#fff;color:#222;width:100%}.estudio-catalog-controls input,.estudio-catalog-controls select,.estudio-quick-button{padding:10px;border:1px solid #ccc;background:#fff;color:#222;font:inherit}.estudio-quick-button{cursor:pointer;margin:8px}.estudio-quick{max-width:700px;width:90vw;max-height:85vh;overflow:auto;border:0;border-radius:12px;padding:24px;background:white;color:#222}.estudio-quick::backdrop{background:#0009}.estudio-quick img{max-height:50vh;max-width:100%;object-fit:contain}.estudio-quick button{padding:10px;float:right}.estudio-quick p{padding:16px 0}@media(prefers-reduced-motion:reduce){.estudio-product img{transition:none}}
 ESTUDIOCSS
   );
-  wp_register_script('estudio-runtime', false, array(), '0.4.13', true); wp_enqueue_script('estudio-runtime');
+  wp_register_script('estudio-runtime', false, array(), '0.4.14', true); wp_enqueue_script('estudio-runtime');
   wp_add_inline_script('estudio-runtime', <<<'ESTUDIOJS'
 (()=>{
  if(document.body.classList.contains('elementor-editor-active')||new URLSearchParams(location.search).has('elementor-preview')||(window.elementorFrontend&&window.elementorFrontend.isEditMode()))return;

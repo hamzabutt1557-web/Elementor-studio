@@ -314,8 +314,10 @@ function convert(n: DesignNode, inner = false): Element {
         image: "image",
         video: "video",
         search: "estudio-search",
+        contact: "estudio-contact",
       } as const
     )[n.kind];
+    if (n.kind === "contact") e.settings.studio_contact_button = (n.text || "Send message").slice(0, 200);
     if (n.kind === "search") e.settings.studio_search_placeholder = (n.text || "Search").slice(0, 200);
     if (n.kind === "heading") {
       e.settings.title = richText(n);
@@ -478,6 +480,8 @@ export function previewHtml(input: Design, editable = false) {
         : `<section ${attrs}>${n.children.map(render).join("")}</section>`;
     if (n.kind === "heading")
       return `<h${n.level || 2} ${attrs}>${richText(n)}</h${n.level || 2}>`;
+    if (n.kind === "contact")
+      return `<div ${attrs}><div style="display:grid;gap:16px"><label>Name<input aria-label="Name" placeholder="Name" style="display:block;width:100%;padding:12px;border:1px solid #94a3b8;border-radius:6px"></label><label>Email<input type="email" aria-label="Email" placeholder="Email" style="display:block;width:100%;padding:12px;border:1px solid #94a3b8;border-radius:6px"></label><label>Message<textarea aria-label="Message" style="display:block;width:100%;min-height:130px;padding:12px;border:1px solid #94a3b8;border-radius:6px"></textarea></label><button type="button" disabled style="padding:12px;border:0;border-radius:6px;background:#147d68;color:white">${escape(n.text || "Send message")}</button><small>Preview only. Submissions work after publishing in WordPress.</small></div></div>`;
     if (n.kind === "search")
       return `<div ${attrs}><input class="estudio-search-input" type="search" aria-label="Search this site" placeholder="${escape(n.text || "Search")}" title="Search connects to your WordPress site after import"></div>`;
     if (n.kind === "video") {

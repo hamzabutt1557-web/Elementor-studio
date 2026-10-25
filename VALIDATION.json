@@ -1,7 +1,7 @@
 {
-  "version": "0.4.13",
+  "version": "0.4.14",
   "checked_at": "2026-10-25",
-  "automated_tests": 97,
+  "automated_tests": 98,
   "automated_tests_status": "passed",
   "typecheck": "passed",
   "production_build": "passed",
@@ -304,5 +304,18 @@
     "cache_body_budget_bytes": 24000000,
     "tests": "100 synthetic callers never exceed 2 active slots; FIFO, overload, queue timeout, cancellation, real brief route and stream disconnection passed",
     "production_load_test": "not performed"
+  },
+  "contact_acceptance": {
+    "environment": "isolated local WordPress / Elementor / PHP 8.3",
+    "browser_submission": "passed",
+    "private_persistence_and_admin_only_access": "passed",
+    "invalid_fields_nonce_honeypot_unknown_widget_malformed_input_throttle": "passed",
+    "viewport_overflow": "passed at 1440, 820, 390",
+    "limitations": [
+      "Manual Add contact only; source forms remain placeholders",
+      "Fixed Name, Email, Message fields; no email delivery",
+      "Basic per-address transient throttle is not atomic or distributed abuse prevention",
+      "Exclude contact pages from full-page caching; no automatic retention policy"
+    ]
   }
 }

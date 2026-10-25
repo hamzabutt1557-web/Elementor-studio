@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   return Response.json(
     {
       provider: providerConfig(),
-      version: "0.4.13",
+      version: "0.4.14",
       limit: 3,
       access: {
         mode: emailLoginEnabled() ? "email" : "password",

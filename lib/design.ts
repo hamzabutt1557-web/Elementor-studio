@@ -90,7 +90,7 @@ export const styleSchema = z
 export type Style = z.infer<typeof styleSchema>;
 export type DesignNode = {
   id: string;
-  kind: "container" | "heading" | "text" | "button" | "image" | "video" | "search";
+  kind: "container" | "heading" | "text" | "button" | "image" | "video" | "search" | "contact";
   text?: string;
   runs?: {
     text: string;
@@ -126,6 +126,7 @@ export const nodeSchema: z.ZodType<DesignNode> = z.lazy(() =>
         "image",
         "video",
         "search",
+        "contact",
       ]),
       text: z.string().max(12000).optional(),
       runs: z

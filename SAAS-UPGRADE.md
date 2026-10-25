@@ -13,7 +13,11 @@ The target is a reliable editable-site conversion product. Market leadership is 
 
 ## Delivered in 0.4.13
 
-Recognised search inputs are editable Studio Site Search widgets backed by local WordPress search. Contact forms, spam protection and store-specific search/filter integrations are still pending.
+Recognised search inputs are editable Studio Site Search widgets backed by local WordPress search. Source-form conversion and store-specific search/filter integrations remain pending.
+
+## Delivered in 0.4.14
+
+Manually added native contact widget with editable labels, required Name/Email/Message validation and private administrator-only WordPress inbox. Basic nonce/honeypot/per-address throttling and inline success/error states tested. Source forms are not automatically mapped; arbitrary field builders, email delivery, advanced abuse prevention and automatic data retention remain pending.
 
 ## Required before a public multi-customer launch
 
