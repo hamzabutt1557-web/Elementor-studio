@@ -10,6 +10,8 @@ import { compareLayout, previewGeometry } from "../lib/layout-audit";
 import { viewportWidths } from "../lib/viewports";
 import assert from "node:assert/strict";
 const fixtures = {
+  invisibleFlow: `<main><div style="position:relative;width:180px"><a style="display:block;visibility:hidden;width:30px;height:30px;margin:0 15px 15px auto">Hidden wishlist</a><button>Quick View</button><p>Add to bag</p></div></main>`,
+  emptyMargins: `<main><p style="margin-bottom:15px">Price</p><div style="margin-bottom:18px"></div><div style="font-size:0;line-height:0"><span style="display:inline-block;font:12px/20px Arial">Size M</span></div></main><footer style="height:120px">Footer</footer>`,
   search: `<main><form role="search" action="https://source.example/search"><input type="search" placeholder="Search products" value="private-typed-query" style="font:16px/24px Arial;padding:8px 12px;border:1px solid #222;width:240px"></form><form><input type="email" placeholder="Email" value="private@example.test"></form></main>`,
 
   floatedColumns: `<main><div style="display:flow-root;border-bottom:2px solid #222"><aside style="float:left;width:25%;padding:12px">Sidebar</aside><section style="float:right;width:70%;padding:12px"><h2>Product content</h2><p>Floated columns preserve their source positions.</p></section></div><footer style="clear:both">Footer after floats</footer></main>`,

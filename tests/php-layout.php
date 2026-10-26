@@ -12,6 +12,8 @@ $input=array(array('id'=>'abc12345','elType'=>'container','settings'=>array(
  'background_image_tablet'=>array('id'=>'','url'=>''),'position_tablet'=>'','border_border_tablet'=>'none',
  'css_classes'=>'estudio-tools estudio-node unsafe-class',
  'studio_display'=>'flow-root','studio_float'=>'left','studio_float_mobile'=>'none',
+ 'studio_height'=>'140px','studio_height_mobile'=>'auto','studio_aspect_ratio'=>'0.6666667','studio_aspect_ratio_mobile'=>'auto','studio_object_position'=>'50% 20%',
+ 'studio_height_tablet'=>'expression(evil)','studio_aspect_ratio_tablet'=>'0','studio_object_position_mobile'=>'url(evil)',
  'studio_clear_mobile'=>'both','studio_vertical_align'=>'middle',
  'studio_flex_shrink'=>array('unit'=>'px','size'=>0),
  'studio_display_tablet'=>'url(evil)','studio_clear_tablet'=>'invalid',
@@ -23,4 +25,6 @@ if($clean['background_image_tablet']['url']!==''||$clean['position_tablet']!==''
 if($clean['css_classes']!=='estudio-tools estudio-node')throw new Exception('Optional product marker or class allowlist failed');
 if($clean['studio_display']!=='flow-root'||$clean['studio_float_mobile']!=='none'||$clean['studio_clear_mobile']!=='both'||$clean['studio_vertical_align']!=='middle')throw new Exception('Source flow controls lost');
 if(isset($clean['studio_display_tablet'])||isset($clean['studio_clear_tablet']))throw new Exception('Invalid CSS control accepted');
+if($clean['studio_height']!=='140px'||$clean['studio_height_mobile']!=='auto'||$clean['studio_aspect_ratio']!=='0.6666667'||$clean['studio_aspect_ratio_mobile']!=='auto'||$clean['studio_object_position']!=='50% 20%')throw new Exception('Responsive image sizing controls lost');
+if(isset($clean['studio_height_tablet'])||isset($clean['studio_aspect_ratio_tablet'])||isset($clean['studio_object_position_mobile']))throw new Exception('Invalid sizing CSS accepted');
 echo "PHP native layout settings checks passed\n";

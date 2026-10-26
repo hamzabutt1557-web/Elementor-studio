@@ -1,113 +1,114 @@
 {
-  "version": "0.4.14",
-  "checked_at": "2026-10-25",
-  "automated_tests": 98,
+  "version": "0.4.15",
+  "checked_at": "2026-10-26",
+  "automated_tests": 101,
   "automated_tests_status": "passed",
   "typecheck": "passed",
   "production_build": "passed",
   "php_runtime_checks": {
-    "7.4": "fonts, globals, native layout, CSS cache refresh passed",
-    "8.3": "fonts, globals, native layout, CSS cache refresh passed"
+    "8.3": "Current importer syntax and native layout sanitizer including sizing/reset/rejection cases passed",
+    "7.4": "Prior release checks only; not rerun for 0.4.15"
   },
-  "controlled_geometry": "36 device cases passed, p90 drift <=24px",
+  "controlled_geometry": "42 controlled device cases passed (14 fixtures x 3); p90 <=24px",
   "real_site_geometry": {
     "source": "https://bls.uk.com/collections/panties",
+    "scope": "Source-to-preview DOM geometry, not pixel similarity or real-source WordPress acceptance. Visual resources only; analytics and fetch/XHR blocked.",
     "reports": [
       {
         "device": "desktop",
         "width": 1440,
-        "compared": 1187,
-        "missing": 9,
-        "shifted": 938,
-        "medianDriftPx": 191,
-        "p90DriftPx": 264,
+        "compared": 1275,
+        "missing": 0,
+        "shifted": 50,
+        "medianDriftPx": 0,
+        "p90DriftPx": 0,
         "issues": [
           {
-            "id": "d63a7845",
-            "driftPx": 785
+            "id": "e07a3e90",
+            "driftPx": 777
           },
           {
-            "id": "b002ca92",
-            "driftPx": 785
+            "id": "93561038",
+            "driftPx": 88
           },
           {
-            "id": "3c0a62bb",
-            "driftPx": 656
+            "id": "e978e75d",
+            "driftPx": 88
           },
           {
-            "id": "6643fe55",
-            "driftPx": 277
+            "id": "07bcd697",
+            "driftPx": 88
           },
           {
-            "id": "3ba4287f",
-            "driftPx": 277
+            "id": "b2f1fe91",
+            "driftPx": 88
           }
         ]
       },
       {
         "device": "tablet",
         "width": 820,
-        "compared": 1464,
-        "missing": 9,
-        "shifted": 1223,
-        "medianDriftPx": 158,
-        "p90DriftPx": 218,
+        "compared": 1507,
+        "missing": 0,
+        "shifted": 6,
+        "medianDriftPx": 0,
+        "p90DriftPx": 0,
         "issues": [
           {
-            "id": "3bac62bf",
-            "driftPx": 857
+            "id": "e07a3e90",
+            "driftPx": 315
           },
           {
-            "id": "1acfd176",
-            "driftPx": 854
+            "id": "c9289730",
+            "driftPx": 103
           },
           {
-            "id": "3c0a62bb",
-            "driftPx": 670
+            "id": "8452f84e",
+            "driftPx": 30
           },
           {
-            "id": "b202cdb8",
-            "driftPx": 376
+            "id": "18bf0787",
+            "driftPx": 30
           },
           {
-            "id": "d63a7845",
-            "driftPx": 303
+            "id": "7f5cb2ea",
+            "driftPx": 30
           }
         ]
       },
       {
         "device": "mobile",
         "width": 390,
-        "compared": 1457,
-        "missing": 9,
-        "shifted": 1348,
-        "medianDriftPx": 221,
-        "p90DriftPx": 342,
+        "compared": 1501,
+        "missing": 0,
+        "shifted": 6,
+        "medianDriftPx": 0,
+        "p90DriftPx": 0,
         "issues": [
           {
-            "id": "3bac62bf",
-            "driftPx": 857
+            "id": "e07a3e90",
+            "driftPx": 315
           },
           {
-            "id": "1acfd176",
-            "driftPx": 854
+            "id": "c9289730",
+            "driftPx": 103
           },
           {
-            "id": "3c0a62bb",
-            "driftPx": 670
+            "id": "8452f84e",
+            "driftPx": 30
           },
           {
-            "id": "50d689ac",
-            "driftPx": 394
+            "id": "18bf0787",
+            "driftPx": 30
           },
           {
-            "id": "b7ec7bc8",
-            "driftPx": 394
+            "id": "7f5cb2ea",
+            "driftPx": 30
           }
         ]
       }
     ],
-    "limitations": "Diagnostic used allowlisted GET requests and placeholder SVG URLs. Source fonts and images remain external. Material drift remains; no full-site visual acceptance."
+    "remaining": "Offscreen drawer, some hidden spacer measurements and CSS-only icons still differ. Source-specific commerce controls are not a copied backend."
   },
   "wordpress_visual_acceptance": {
     "environment": "WordPress 7.1.3, Elementor 4.3.5, PHP 8.3, SQLite; isolated local installation",
@@ -137,7 +138,10 @@
       "empty_results": "passed",
       "requires": "Studio importer active; WordPress search uses the destination site",
       "standalone_widget_without_import_metadata": "CSS and destination verified"
-    }
+    },
+    "scope": "Controlled 21-element fixture, not the full BLS source site",
+    "image_focal_point": "50% 20% verified on all 4 packaged images at all three viewports",
+    "sizing": "Fixed header/footer heights, mobile auto-height reset, fixed logo width and image aspect ratio exercised"
   },
   "limitations": [
     "No 100% cloning guarantee",
@@ -145,7 +149,8 @@
     "Captured original is a desktop snapshot, not an interactive live site",
     "Source fonts remain external URLs and require source availability",
     "Paid AI provider calls not exercised",
-    "Recognised search inputs are supported; contact forms and source-specific product filters still require integration."
+    "Recognised search inputs are supported; contact forms and source-specific product filters still require integration.",
+    "Some CSS-only icons and offscreen drawer geometry still differ; real-source WordPress end-to-end acceptance remains pending."
   ],
   "previous_release_validation": {
     "deployment": {
@@ -289,7 +294,8 @@
     "status": "0 vulnerabilities reported after patch updates",
     "next": "16.4.3",
     "undici": "7.30.1",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "scope": "Carried forward from previous release; dependencies unchanged"
   },
   "local_production_smoke": {
     "status": "not completed; local server smoke check did not return a result"
@@ -316,6 +322,41 @@
       "Fixed Name, Email, Message fields; no email delivery",
       "Basic per-address transient throttle is not atomic or distributed abuse prevention",
       "Exclude contact pages from full-page caching; no automatic retention policy"
+    ]
+  },
+  "intermediate_width_geometry": {
+    "scope": "Source-to-preview geometry at uncaptured viewport widths; not WordPress acceptance",
+    "results": [
+      {
+        "device": "1100",
+        "width": 1100,
+        "compared": 30,
+        "missing": 0,
+        "shifted": 0,
+        "medianDriftPx": 0,
+        "p90DriftPx": 0,
+        "issues": []
+      },
+      {
+        "device": "900",
+        "width": 900,
+        "compared": 30,
+        "missing": 0,
+        "shifted": 0,
+        "medianDriftPx": 0,
+        "p90DriftPx": 0,
+        "issues": []
+      },
+      {
+        "device": "600",
+        "width": 600,
+        "compared": 30,
+        "missing": 0,
+        "shifted": 0,
+        "medianDriftPx": 0,
+        "p90DriftPx": 0,
+        "issues": []
+      }
     ]
   }
 }

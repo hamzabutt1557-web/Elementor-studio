@@ -1,4 +1,4 @@
-# Elementor Studio 0.4.14
+# Elementor Studio 0.4.15
 
 URL or client brief → editable draft → live edit/compare → native Elementor JSON or WordPress ZIP package.
 This is a page draft generator for owned/authorized sources. No similarity percentage or arbitrary-site functional clone is promised.
@@ -180,3 +180,9 @@ Validation runs on both client and server. A nonce, honeypot and basic per-addre
 Source forms are still placeholders: replace them with Add contact when these three fields fit. Arbitrary fields, original backend cloning, uploads, email delivery, WooCommerce checkout and full multi-tenant scaling are not implemented. Preview fields do not submit.
 
 Acceptance: 98 unit tests; local PHP 8.3 / WordPress / Elementor browser submission and private persistence; invalid/empty fields, malformed input, invalid nonce, honeypot, unknown widget and throttling; administrator-only inbox checks; no horizontal overflow at 1440/820/390. The reusable integration checks under scripts/wordpress-contact-* require the isolated .qa WordPress installation and a locally running server on port 8777. Run the fixture before the browser check to reset its local rate-limit bucket; run the storage check afterwards. Never run the fixture on a production WordPress installation.
+
+## 0.4.15 — responsive sizing and spacing
+
+Captured images retain responsive aspect ratios, automatic height and focal position. Fixed logo widths and fixed header/footer heights remain editable, with breakpoint resets. Zero-size line boxes, empty margin spacers and parent borders no longer accumulate product-row and footer drift. Different widget kinds at different breakpoints export as valid responsive variants. Native container wrapping now matches the preview.
+
+Existing exports do not update automatically: capture again, export a new ZIP and update the included Elementor Studio Importer before importing. This release does not add account signup or a commerce backend. See VALIDATION.json for bounded test results and remaining source-site differences.

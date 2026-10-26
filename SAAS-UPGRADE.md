@@ -19,6 +19,10 @@ Recognised search inputs are editable Studio Site Search widgets backed by local
 
 Manually added native contact widget with editable labels, required Name/Email/Message validation and private administrator-only WordPress inbox. Basic nonce/honeypot/per-address throttling and inline success/error states tested. Source forms are not automatically mapped; arbitrary field builders, email delivery, advanced abuse prevention and automatic data retention remain pending.
 
+## Delivered in 0.4.15
+
+Responsive image sizing/focal position, fixed logo widths, native container heights, zero-size line boxes, empty spacers and responsive widget-kind variants. Controlled real WordPress/Elementor ZIP import matches all 21 measured elements at desktop/tablet/mobile; editor save and local search pass. Real BLS source-to-preview checking is separate from WordPress acceptance and still has residual differences.
+
 ## Required before a public multi-customer launch
 
 | Area | Required implementation | Acceptance evidence |

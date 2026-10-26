@@ -101,6 +101,14 @@ function settings(
       sizes: [],
     });
   }
+  if (s.widthPx) {
+    set(kind === "container" ? "width" : "_element_custom_width", { unit: "px", size: s.widthPx, sizes: [] });
+    if (kind !== "container") set("_element_width", "initial");
+  }
+  if (s.aspectRatio !== undefined) set("studio_aspect_ratio", s.aspectRatio ? String(s.aspectRatio) : "auto");
+  if (s.objectPosition) set("studio_object_position", s.objectPosition);
+  if (kind === "container" && (s.height !== undefined || s.heightAuto !== undefined))
+    set("studio_height", s.heightAuto ? "auto" : (s.height || 0) + "px");
   if (s.minHeight !== undefined)
     set("min_height", { unit: "px", size: s.minHeight, sizes: [] });
   if (s.backgroundImage !== undefined) {
@@ -150,8 +158,8 @@ function settings(
   if (s.columnSpan) set(advanced("grid_column"), String(s.columnSpan));
   if (s.overflow && kind === "container")
     set("overflow", s.overflow === "clip" ? "hidden" : s.overflow);
-  if (s.height !== undefined && kind === "image")
-    set("height", { unit: "px", size: s.height, sizes: [] });
+  if (kind === "image" && (s.height !== undefined || s.heightAuto !== undefined))
+    set("height", s.heightAuto ? { unit: "custom", size: "auto", sizes: [] } : { unit: "px", size: s.height, sizes: [] });
   if (s.textTransform) set("typography_text_transform", s.textTransform);
   if (s.borderWidth !== undefined || s.borderWidths) {
     set(
@@ -177,7 +185,8 @@ function settings(
       right: "auto",
     });
   }
-  if (s.lineHeight)
+  if (s.lineHeightNormal) set("typography_line_height", {unit:"custom",size:"normal",sizes:[]});
+  else if (s.lineHeight !== undefined)
     set("typography_line_height", {
       unit: "px",
       size: s.lineHeight,
@@ -213,9 +222,9 @@ function settings(
       s.color,
     );
   if (s.align) set("align", s.align);
-  if (s.fontSize || s.fontFamily || s.fontWeight) {
+  if (s.fontSize !== undefined || s.fontFamily || s.fontWeight) {
     set("typography_typography", "custom");
-    if (s.fontSize)
+    if (s.fontSize !== undefined)
       set("typography_font_size", { unit: "px", size: s.fontSize, sizes: [] });
     if (s.fontFamily)
       set(
@@ -243,7 +252,7 @@ function settings(
     if (s.direction) set("flex_direction", s.direction);
     if (s.justify) set("flex_justify_content", s.justify);
     if (s.alignItems) set("flex_align_items", s.alignItems);
-    if (s.wrap) set("flex_wrap", s.wrap);
+    set("flex_wrap", s.wrap || "wrap");
     if (s.gap !== undefined)
       set("flex_gap", {
         unit: "px",
@@ -387,14 +396,18 @@ export function previewHtml(input: Design, editable = false) {
     push("color", s.color);
     push("background", s.background);
     if (s.fontFamily) push("font-family", cssFontStack(s.fontFamily));
-    if (s.fontSize) push("font-size", s.fontSize + "px");
+    if (s.fontSize !== undefined) push("font-size", s.fontSize + "px");
     push("font-weight", s.fontWeight);
     push("flex-shrink", s.flexShrink);
     push("float", s.float);
     push("clear", s.clear);
     push("vertical-align", s.verticalAlign);
     if (s.width !== undefined) push("width", s.width + "%");
-    if (s.height !== undefined) push("height", s.height + "px");
+    if (s.widthPx) push("width", s.widthPx + "px");
+    if (s.heightAuto) push("height", "auto");
+    else if (s.height !== undefined) push("height", s.height + "px");
+    if (s.aspectRatio !== undefined) push("aspect-ratio", s.aspectRatio || "auto");
+    push("object-position", s.objectPosition);
     if (s.maxWidth !== undefined) push("max-width", s.maxWidth + "px");
     push("position", s.position);
     if (s.top !== undefined) push("top", s.top + "px");
@@ -408,7 +421,8 @@ export function previewHtml(input: Design, editable = false) {
     push("border-color", s.borderColor);
     if (s.columnSpan) push("grid-column", "span " + s.columnSpan);
     if (s.minHeight !== undefined) push("min-height", s.minHeight + "px");
-    if (s.lineHeight) push("line-height", s.lineHeight + "px");
+    if (s.lineHeightNormal) push("line-height", "normal");
+    else if (s.lineHeight !== undefined) push("line-height", s.lineHeight + "px");
     if (s.letterSpacing !== undefined)
       push("letter-spacing", s.letterSpacing + "px");
     if (s.paddingBox)

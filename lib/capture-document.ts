@@ -231,6 +231,24 @@ export function captureDocument() {
       tag === "img" &&
       Boolean(el.getAttribute("data-srcset") || el.getAttribute("data-src")) &&
       !/--2|hover/i.test(el.className);
+    // Invisible in-flow controls still reserve space. Keep a blank editable
+    // spacer, without their hidden content or interactions, so later controls
+    // do not jump upward (for example a hidden wishlist above Quick View).
+    if (s.display !== "none" && !pendingImage &&
+        (s.visibility === "hidden" || s.opacity === "0") &&
+        !["absolute", "fixed"].includes(s.position) && rect.width > 1 && rect.height > 1) {
+      const id = hashId(path);
+      const margin = [s.marginTop,s.marginRight,s.marginBottom,s.marginLeft]
+        .map(v=>Math.max(-200,Math.min(200,parseFloat(v)||0)));
+      count++;
+      if (!clipped) recordBox(id,rect);
+      return [{id,kind:"container",text:"",children:[],style:{
+        display:s.display.startsWith("inline")?"inline-block":"block",
+        widthPx:Math.min(10000,rect.width),height:Math.min(10000,rect.height),
+        heightAuto:false,minHeight:0,padding:0,marginBox:margin,flexShrink:0,
+        float:["left","right"].includes(s.cssFloat)?s.cssFloat:"none",
+      }}];
+    }
     if (
       s.display === "none" ||
       s.visibility === "hidden" ||
@@ -292,7 +310,17 @@ export function captureDocument() {
     }
     const number = (v: string) =>
       Math.max(0, Math.min(200, parseFloat(v) || 0));
+    // Typed OM retains authored auto/percent sizing; getComputedStyle resolves it
+    // into pixels and would freeze responsive images at one captured viewport.
+    const declared = (property: string) => {
+      try { return String((el as any).computedStyleMap().get(property)); }
+      catch { return ""; }
+    };
+    const declaredHeight = declared("height");
     const style: any = {
+      widthPx: 0,
+      heightAuto: true,
+      aspectRatio: 0,
       display: s.display === "inline" ? "inline-block" :
         ["block", "flow-root", "inline-block", "flex", "inline-flex", "grid", "inline-grid"].includes(s.display) ? s.display : "block",
       // Widths below are already the browser's final (possibly shrunken)
@@ -305,7 +333,7 @@ export function captureDocument() {
       background: s.backgroundColor,
       fontFamily:
         s.fontFamily.length <= 1200 ? s.fontFamily : "Arial, sans-serif",
-      fontSize: Math.max(6, Math.min(180, number(s.fontSize))),
+      fontSize: Math.max(0, Math.min(180, number(s.fontSize))),
       fontWeight: s.fontWeight,
       align: ["left", "center", "right"].includes(s.textAlign)
         ? s.textAlign
@@ -334,8 +362,9 @@ export function captureDocument() {
       [s.marginTop, s.marginRight, s.marginBottom, s.marginLeft],
       true,
     );
-    style.lineHeight =
-      Math.min(300, parseFloat(s.lineHeight) || 0) || undefined;
+    style.lineHeightNormal = s.lineHeight === "normal";
+    style.lineHeight = Number.isFinite(parseFloat(s.lineHeight))
+      ? Math.min(300, Math.max(0, parseFloat(s.lineHeight))) : undefined;
     style.letterSpacing = Math.max(
       -20,
       Math.min(50, parseFloat(s.letterSpacing) || 0),
@@ -363,15 +392,18 @@ export function captureDocument() {
       ].includes(s.justifyContent)
     )
       style.justify = s.justifyContent;
-    if (["flex-start", "center", "flex-end", "stretch"].includes(s.alignItems))
-      style.alignItems = s.alignItems;
+    const alignment = ({start:"flex-start",end:"flex-end"} as Record<string,string>)[s.alignItems] || s.alignItems;
+    if (["flex-start", "center", "flex-end", "stretch"].includes(alignment))
+      style.alignItems = alignment;
     style.wrap = s.flexWrap === "nowrap" ? "nowrap" : "wrap";
     const parentRect = el.parentElement?.getBoundingClientRect();
     const parentStyle = el.parentElement && getComputedStyle(el.parentElement);
     const contentWidth = parentRect
       ? parentRect.width -
         (parseFloat(parentStyle?.paddingLeft || "0") || 0) -
-        (parseFloat(parentStyle?.paddingRight || "0") || 0)
+        (parseFloat(parentStyle?.paddingRight || "0") || 0) -
+        (parseFloat(parentStyle?.borderLeftWidth || "0") || 0) -
+        (parseFloat(parentStyle?.borderRightWidth || "0") || 0)
       : 0;
     if (contentWidth)
       style.width = Math.max(
@@ -379,6 +411,12 @@ export function captureDocument() {
         Math.min(300, (rect.width / contentWidth) * 100),
       );
     if (parentStyle?.display === "grid") style.width = 100;
+    if (/^[0-9.]+px$/.test(declared("width")))
+      style.widthPx = Math.min(10000, rect.width);
+    if (/^[0-9.]+px$/.test(declaredHeight)) {
+      style.height = Math.min(10000, rect.height);
+      style.heightAuto = false;
+    }
     if (s.maxWidth.endsWith("px") && parseFloat(s.maxWidth) > 0)
       style.maxWidth = Math.min(10000, parseFloat(s.maxWidth));
     style.position = ["relative", "absolute", "fixed", "sticky"].includes(
@@ -448,9 +486,17 @@ export function captureDocument() {
         style.columnSpan = best;
       }
     }
-    if (rect.height === 0 && rect.width > 0) style.height = 0;
-    if (tag === "img" && rect.height)
+    if (rect.height === 0 && rect.width > 0) { style.height = 0; style.heightAuto = false; }
+    if (tag === "img" && rect.height) {
       style.height = Math.min(10000, rect.height);
+      style.heightAuto = false;
+      if (declaredHeight === "auto" || declaredHeight.endsWith("%")) {
+        style.aspectRatio = Math.min(100, rect.width / rect.height);
+        style.heightAuto = true;
+      }
+      if (/^-?[0-9.]+(?:%|px) -?[0-9.]+(?:%|px)$/.test(s.objectPosition))
+        style.objectPosition = s.objectPosition;
+    }
     const lm = parseFloat(s.marginLeft) || 0,
       rm = parseFloat(s.marginRight) || 0;
     // Some browser snapshots resolve auto margins to zero despite a centered
@@ -504,10 +550,11 @@ export function captureDocument() {
       /box-ratio|aspect-ratio/i.test(el.className) &&
       el.querySelector("img")
     ) {
-      // Ratio padding reserves the image slot. Replacing it with a measured
-      // native minimum height keeps absolute images and product captions aligned.
+      // Preserve ratio padding as a responsive native aspect ratio.
       style.paddingBox = [0, 0, 0, 0];
-      style.minHeight = Math.min(2500, rect.height);
+      style.aspectRatio = Math.min(100, rect.width / rect.height);
+      style.minHeight = 0;
+      style.heightAuto = true;
       delete style.height;
     }
     let kind = "container";
@@ -733,8 +780,16 @@ export function captureDocument() {
         })
         .map((c) => c.getBoundingClientRect());
       // Preserve the slot reserved by pseudo-elements around absolute media.
-      if (!childBoxes.length && rect.height > 1)
-        style.minHeight = Math.max(style.minHeight || 0, Math.min(2500, rect.height));
+      if (!childBoxes.length && rect.height > 1) {
+        const before = getComputedStyle(el, "::before");
+        const ratioSlot = before.content !== "none" && parseFloat(before.paddingTop) > 0;
+        if (ratioSlot || (declaredHeight === "auto" && s.aspectRatio !== "auto")) {
+          style.aspectRatio = Math.min(100, rect.width / rect.height);
+          style.heightAuto = true;
+        } else if (!style.aspectRatio) {
+          style.minHeight = Math.max(style.minHeight || 0, Math.min(2500, rect.height));
+        }
+      }
       const horizontal = childBoxes.some((a, i) =>
         childBoxes
           .slice(i + 1)
@@ -829,7 +884,8 @@ export function captureDocument() {
         );
         style.fontWeight = ts.fontWeight;
         if ((parseFloat(s.fontSize) || 0) < 1)
-          style.lineHeight = Math.min(300, parseFloat(ts.lineHeight) || 0) || undefined;
+          { style.lineHeight = Math.min(300, parseFloat(ts.lineHeight) || 0) || undefined;
+            style.lineHeightNormal = ts.lineHeight === "normal"; }
         if (["none", "uppercase", "lowercase", "capitalize"].includes(ts.textTransform))
           style.textTransform = ts.textTransform;
         style.letterSpacing = Math.max(
@@ -839,6 +895,9 @@ export function captureDocument() {
         break;
       }
     }
+    if (kind !== "container" && kind !== "image" && declared("width") === "auto" &&
+        (/^inline/.test(s.display) || (parentStyle?.display.includes("flex") && s.flexGrow === "0" && s.flexBasis === "auto")))
+      style.widthPx = Math.min(10000, rect.width);
     if (kind === "text" && s.display === "inline") {
       if (
         parentStyle &&
@@ -855,13 +914,13 @@ export function captureDocument() {
       !text &&
       ["div", "section", "hr"].includes(tag) &&
       rect.width >= 8 &&
-      rect.height >= 8
+      (rect.height >= 8 || style.marginBox.some((v:number)=>v!==0))
     ) {
       kind = "container";
       style.minHeight = Math.min(2500, rect.height);
     }
     if (
-      (kind === "container" && !children.length && !style.minHeight) ||
+      (kind === "container" && !children.length && !style.minHeight && style.height === undefined && !style.marginBox.some((v:number)=>v!==0)) ||
       (kind !== "container" && kind !== "image" && kind !== "video" && !text)
     )
       return [];
