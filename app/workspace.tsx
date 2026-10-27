@@ -422,7 +422,7 @@ export default function Workspace({
     if (completed) {
       setDrawer(null);
       setConversionPreview(false);
-      setCompare(true);
+      setCompare(false);
       setLive(true);
     }
   }
@@ -1130,7 +1130,7 @@ export default function Workspace({
               }}
               disabled={!current || busy}
             >
-              Preview & edit
+              Open design editor
             </button>
             <button
               className="secondary"
@@ -1231,7 +1231,7 @@ export default function Workspace({
                           setLive(true);
                         }}
                       >
-                        Live preview & edit
+                        Open design editor
                       </button>
                       <div className="device-tabs">
                         {[

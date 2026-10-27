@@ -12,9 +12,24 @@ import {
   EyeOff,
   MousePointer2,
   ListOrdered,
+  Type,
+  ImagePlus,
+  SquarePlus,
+  Layers,
+  Ruler,
+  Undo2,
+  Redo2,
+  PanelRight,
+  Scan,
+  ArrowLeft,
+  Share2,
+  Copy,
+  Trash2,
+  Monitor,
+  Download,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { requestJson } from "@/lib/client-api";
+import { requestJson, requestResponse } from "@/lib/client-api";
 import { replaceText } from "@/lib/text-format";
 import { viewportWidth } from "@/lib/viewports";
 import FontPicker from "./font-picker";
@@ -74,9 +89,7 @@ export default function LiveWorkspace({
   const [fit, setFit] = useState(true);
   const outputPane = useRef<HTMLDivElement>(null);
   const [sourceRevision, setSourceRevision] = useState(0);
-  const [original, setOriginal] = useState(
-    screenshot ? "capture" : "live",
-  );
+  const [original, setOriginal] = useState(screenshot ? "capture" : "live");
   const [showOriginal, setShowOriginal] = useState(initialCompare);
   const [measuring, setMeasuring] = useState(false);
   const [measure, setMeasure] = useState<{
@@ -101,12 +114,14 @@ export default function LiveWorkspace({
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(true);
   const [inlineEditing, setInlineEditing] = useState(false);
-  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(true);
   const [layerQuery, setLayerQuery] = useState("");
   const [collapsedLayers, setCollapsedLayers] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [history, setHistory] = useState<Design[]>([]);
+  const [future, setFuture] = useState<Design[]>([]);
+  const saving = useRef(false);
   const revision = useRef(0);
   const nodes = useMemo(() => flatten(draft.nodes), [draft]);
   const node = nodes.find((n) => n.id === selected);
@@ -119,7 +134,7 @@ export default function LiveWorkspace({
       setZoom(
         Math.max(
           5,
-          Math.min(100, Math.floor(((el.clientWidth - 24) / width) * 100)),
+          Math.min(100, Math.floor(((el.clientWidth - 64) / width) * 100)),
         ),
       );
     const observer = new ResizeObserver(measure);
@@ -134,6 +149,10 @@ export default function LiveWorkspace({
     const focus = document.activeElement as HTMLElement | null;
     const el = dialog.current;
     el?.showModal();
+    if (window.matchMedia("(max-width: 700px)").matches) {
+      setInspectorOpen(false);
+      setDevice("mobile");
+    }
     const old = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
@@ -143,7 +162,12 @@ export default function LiveWorkspace({
       focus?.focus();
     };
   }, []);
-  async function render(next: Design, remember = true) {
+  async function render(
+    next: Design,
+    action: "edit" | "undo" | "redo" = "edit",
+  ) {
+    if (saving.current) return;
+    saving.current = true;
     const version = ++revision.current;
     const previous = draft;
     setDraft(next);
@@ -157,8 +181,13 @@ export default function LiveWorkspace({
         body: JSON.stringify({ design: next, editable: true }),
       });
       if (version === revision.current) {
-        if (remember) setHistory((prev) => [...prev.slice(-19), previous]);
-        else setHistory((prev) => prev.slice(0, -1));
+        if (action === "undo") {
+          setHistory((prev) => prev.slice(0, -1));
+          setFuture((prev) => [...prev, previous]);
+        } else {
+          setHistory((prev) => [...prev.slice(-19), previous]);
+          setFuture((prev) => (action === "redo" ? prev.slice(0, -1) : []));
+        }
         setHtml(data.preview);
         setInlineEditing(false);
         onSave(next, data.preview);
@@ -173,6 +202,7 @@ export default function LiveWorkspace({
         );
       }
     } finally {
+      saving.current = false;
       if (version === revision.current) setPending(false);
     }
   }
@@ -497,13 +527,144 @@ export default function LiveWorkspace({
     const parent = nodes.find((n) => n.children.some((c) => c.id === selected));
     if (parent) setSelected(parent.id);
   }
+  async function exportDesign(format: "json" | "zip") {
+    if (saving.current || pending || uploading) return;
+    setPending(true);
+    setError("");
+    try {
+      const blob =
+        format === "json"
+          ? new Blob(
+              [
+                JSON.stringify(
+                  (
+                    await requestJson<{ template: unknown }>("/api/template", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ design: draft }),
+                    })
+                  ).template,
+                  null,
+                  2,
+                ),
+              ],
+              { type: "application/json" },
+            )
+          : await (
+              await requestResponse(
+                "/api/export",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ designs: [draft], media: true }),
+                },
+                120000,
+              )
+            ).blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "elementor-design." + format;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setError("Export failed. " + (e as Error).message);
+    } finally {
+      setPending(false);
+    }
+  }
+  function insertWidget(kind: "text" | "image") {
+    const findParent = (items: DesignNode[]): DesignNode | undefined => {
+      for (const item of items) {
+        if (item.children.some((child) => child.id === selected)) return item;
+        const found = findParent(item.children);
+        if (found) return found;
+      }
+    };
+    let base = draft;
+    let parent =
+      node?.kind === "container"
+        ? node
+        : findParent(draft.nodes) ||
+          draft.nodes.find((n) => n.kind === "container");
+    if (!parent) {
+      base = addSection(draft);
+      parent = base.nodes.at(-1)!;
+    }
+    const next = addWidget(base, parent.id, kind);
+    const added = flatten(next.nodes).find(
+      (n) => n.kind === kind && !nodes.some((old) => old.id === n.id),
+    );
+    if (added) {
+      setSelected(added.id);
+      setSelectedIds([added.id]);
+    }
+    setEditing(true);
+    setInspectorOpen(true);
+    void render(next);
+  }
+  // Canvas lives in a sandboxed frame: receive the same shortcuts from both surfaces.
+  useEffect(() => {
+    const run = (key: string, modifier: boolean, shift: boolean) => {
+      if (pending || uploading || inlineEditing) return false;
+      if (modifier && key === "z") {
+        const stack = shift ? future : history;
+        if (stack.length)
+          void render(stack[stack.length - 1], shift ? "redo" : "undo");
+        return true;
+      }
+      if (modifier && key === "y") {
+        if (future.length) void render(future[future.length - 1], "redo");
+        return true;
+      }
+      if (!modifier && key === "v") {
+        setEditing(true);
+        setFreeMove(true);
+        setMeasuring(false);
+        return true;
+      }
+      return false;
+    };
+    const keyboard = (e: KeyboardEvent) => {
+      if (
+        (e.target as HTMLElement)?.closest(
+          "input,textarea,select,[contenteditable]",
+        )
+      )
+        return;
+      if (run(e.key.toLowerCase(), e.ctrlKey || e.metaKey, e.shiftKey))
+        e.preventDefault();
+    };
+    const receive = (e: MessageEvent) => {
+      if (
+        e.source === frame.current?.contentWindow &&
+        e.data?.type === "estudio-shortcut" &&
+        typeof e.data.key === "string"
+      )
+        run(e.data.key, !!e.data.modifier, !!e.data.shift);
+    };
+    window.addEventListener("keydown", keyboard);
+    window.addEventListener("message", receive);
+    return () => {
+      window.removeEventListener("keydown", keyboard);
+      window.removeEventListener("message", receive);
+    };
+  });
   function renderLayerNodes(items: DesignNode[], depth = 0): ReactNode[] {
     const query = layerQuery.trim().toLowerCase();
     return items.flatMap((item) => {
-      const matches = !query || `${item.kind} ${item.text || ""} ${item.alt || ""}`.toLowerCase().includes(query);
-      const childMatches = (children: DesignNode[]): boolean => children.some((child) =>
-        `${child.kind} ${child.text || ""} ${child.alt || ""}`.toLowerCase().includes(query) || childMatches(child.children),
-      );
+      const matches =
+        !query ||
+        `${item.kind} ${item.text || ""} ${item.alt || ""}`
+          .toLowerCase()
+          .includes(query);
+      const childMatches = (children: DesignNode[]): boolean =>
+        children.some(
+          (child) =>
+            `${child.kind} ${child.text || ""} ${child.alt || ""}`
+              .toLowerCase()
+              .includes(query) || childMatches(child.children),
+        );
       if (query && !matches && !childMatches(item.children)) return [];
       const expanded = query.length > 0 || !collapsedLayers.includes(item.id);
       const effectiveStyle = {
@@ -517,65 +678,159 @@ export default function LiveWorkspace({
         setSelectedIds([item.id]);
       };
       const row = (
-        <div className={"layer-row" + (selected === item.id ? " selected" : "")} key={item.id} style={{ paddingInlineStart: 6 + depth * 14 }}>
+        <div
+          className={"layer-row" + (selected === item.id ? " selected" : "")}
+          key={item.id}
+          style={{ paddingInlineStart: 6 + depth * 14 }}
+        >
           {item.children.length > 0 ? (
-            <button className="layer-chevron" type="button" aria-label={(expanded ? "Collapse " : "Expand ") + item.kind} onClick={() => setCollapsedLayers((old) => expanded ? [...new Set([...old, item.id])] : old.filter((id) => id !== item.id))}>
-              {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            <button
+              className="layer-chevron"
+              type="button"
+              aria-label={(expanded ? "Collapse " : "Expand ") + item.kind}
+              onClick={() =>
+                setCollapsedLayers((old) =>
+                  expanded
+                    ? [...new Set([...old, item.id])]
+                    : old.filter((id) => id !== item.id),
+                )
+              }
+            >
+              {expanded ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
             </button>
-          ) : <span className="layer-spacer" />}
-          <button className="layer-name" type="button" onClick={select} title={item.text || item.alt || item.kind}>
-            <span className="layer-kind">{item.kind === "container" ? "▱" : item.kind === "image" ? "▧" : item.kind === "button" ? "▰" : "T"}</span>
-            <span>{item.kind === "container" ? item.region === "header" ? "Header section" : item.region === "footer" ? "Footer section" : "Section" : (item.text || item.alt || item.kind).replace(/\s+/g, " ").slice(0, 34)}</span>
+          ) : (
+            <span className="layer-spacer" />
+          )}
+          <button
+            className="layer-name"
+            type="button"
+            onClick={select}
+            title={item.text || item.alt || item.kind}
+          >
+            <span className="layer-kind">
+              {item.kind === "container"
+                ? "▱"
+                : item.kind === "image"
+                  ? "▧"
+                  : item.kind === "button"
+                    ? "▰"
+                    : "T"}
+            </span>
+            <span>
+              {item.kind === "container"
+                ? item.region === "header"
+                  ? "Header section"
+                  : item.region === "footer"
+                    ? "Footer section"
+                    : "Section"
+                : (item.text || item.alt || item.kind)
+                    .replace(/\s+/g, " ")
+                    .slice(0, 34)}
+            </span>
           </button>
-          <button className="layer-visibility" type="button" aria-label={(hidden ? "Show " : "Hide ") + (item.text || item.kind)} title={hidden ? "Show layer" : "Hide layer"} onClick={() => {
-            const target = device === "desktop" ? "style" : device;
-            const nextStyle = { ...(item[target] || {}), hidden: !hidden };
-            void render({ ...draft, nodes: update(draft.nodes, item.id, { [target]: nextStyle }) });
-          }}>{hidden ? <EyeOff size={14} /> : <Eye size={14} />}</button>
+          <button
+            className="layer-visibility"
+            type="button"
+            aria-label={(hidden ? "Show " : "Hide ") + (item.text || item.kind)}
+            title={hidden ? "Show layer" : "Hide layer"}
+            onClick={() => {
+              const target = device === "desktop" ? "style" : device;
+              const nextStyle = { ...(item[target] || {}), hidden: !hidden };
+              void render({
+                ...draft,
+                nodes: update(draft.nodes, item.id, { [target]: nextStyle }),
+              });
+            }}
+          >
+            {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
         </div>
       );
-      return expanded ? [row, ...renderLayerNodes(item.children, depth + 1)] : [row];
+      return expanded
+        ? [row, ...renderLayerNodes(item.children, depth + 1)]
+        : [row];
     });
   }
   return (
     <dialog
       ref={dialog}
-      className={"live-workspace" + (showOriginal ? " split-comparison" : "")}
+      className={
+        "live-workspace studio-editor" +
+        (showOriginal ? " split-comparison" : "")
+      }
       onCancel={(e) => {
         if (pending || uploading) e.preventDefault();
         else onClose();
       }}
       aria-labelledby="live-title"
     >
-      <header className="live-toolbar">
+      <header className="studio-menubar">
+        <button
+          className="studio-back"
+          disabled={pending || uploading}
+          onClick={onClose}
+          aria-label="Back to workspace"
+        >
+          <ArrowLeft size={17} />
+        </button>
         <strong id="live-title">
-          <span className="studio-live-dot" />{" "}
-          {showOriginal ? "Compare preview" : "Live canvas"}
+          <span className="studio-monogram">E</span> Studio{" "}
+          <span className="studio-editor-label">Design editor</span>
         </strong>
-        {(source || screenshot) && (
-          <button
-            aria-pressed={showOriginal}
-            onClick={() => setShowOriginal((v) => !v)}
-          >
-            Compare original
-          </button>
-        )}
+        <div className="studio-document-title">{draft.title}</div>
         <button disabled={pending || uploading} onClick={sharePage}>
-          Share preview
+          <Share2 size={15} />
+          <span>Share preview</span>
         </button>
         <button
-          aria-pressed={measuring}
-          onClick={() => setMeasuring((v) => !v)}
+          className="studio-export"
+          disabled={pending || uploading}
+          onClick={() => void exportDesign("zip")}
         >
-          Measurements
+          <Download size={15} />
+          <span>Export ZIP</span>
         </button>
+        <button
+          aria-label="Toggle Layers and Properties"
+          title="Layers and Properties"
+          aria-pressed={inspectorOpen}
+          onClick={() => {
+            setInspectorOpen((v) => !v);
+            setMeasuring(false);
+          }}
+        >
+          <PanelRight size={18} />
+        </button>
+      </header>
+      <div className="studio-options" aria-label="Document controls">
+        <div className="studio-history">
+          <button
+            aria-label="Undo"
+            title="Undo (Ctrl / ⌘ Z)"
+            disabled={!history.length || pending || uploading}
+            onClick={() => void render(history[history.length - 1], "undo")}
+          >
+            <Undo2 size={17} />
+          </button>
+          <button
+            aria-label="Redo"
+            title="Redo (Ctrl / ⌘ Shift Z)"
+            disabled={!future.length || pending || uploading}
+            onClick={() => void render(future[future.length - 1], "redo")}
+          >
+            <Redo2 size={17} />
+          </button>
+        </div>
         <label>
-          Device{" "}
+          <Monitor size={15} />
           <select
+            aria-label="Device"
             value={device}
-            onChange={(e) =>
-              setDevice(e.target.value as "desktop" | "tablet" | "mobile")
-            }
+            onChange={(e) => setDevice(e.target.value as typeof device)}
           >
             <option value="desktop">Desktop</option>
             <option value="tablet">Tablet</option>
@@ -583,15 +838,15 @@ export default function LiveWorkspace({
           </select>
         </label>
         <label>
-          Zoom{" "}
           <select
+            aria-label="Zoom"
             value={zoom}
             onChange={(e) => {
               setFit(false);
               setZoom(Number(e.target.value));
             }}
           >
-            {[...new Set([zoom, 10, 25, 50, 75, 100, 125])]
+            {[...new Set([zoom, 10, 25, 50, 75, 100, 125, 150, 200])]
               .sort((a, b) => a - b)
               .map((n) => (
                 <option key={n} value={n}>
@@ -600,70 +855,40 @@ export default function LiveWorkspace({
               ))}
           </select>
         </label>
-        <button aria-pressed={fit} onClick={() => setFit(true)}>
-          Fit both panes
-        </button>
         <button
+          aria-pressed={fit}
+          onClick={() => setFit(true)}
+          title="Fit canvas"
+        >
+          <Scan size={16} /> Fit
+        </button>
+        {(source || screenshot) && (
+          <button
+            aria-pressed={showOriginal}
+            onClick={() => setShowOriginal((v) => !v)}
+          >
+            Compare
+          </button>
+        )}
+        <button
+          aria-pressed={!editing}
           onClick={() => {
-            setEditing(true);
-            setInspectorOpen(true);
+            setEditing((v) => !v);
             setInlineEditing(false);
-            const target =
-              node && ["heading", "text"].includes(node.kind)
-                ? node
-                : nodes.find((n) => n.kind === "heading" || n.kind === "text");
-            if (target) {
-              setSelected(target.id);
-              setSelectedIds([target.id]);
-            }
-            requestAnimationFrame(() =>
-              inspector.current?.scrollTo({ top: 0 }),
-            );
-          }}
-          disabled={
-            !nodes.some((n) => n.kind === "heading" || n.kind === "text")
-          }
-        >
-          Text editor
-        </button>
-        <button
-          onClick={() => setInspectorOpen((v) => !v)}
-          aria-pressed={inspectorOpen}
-        >
-          {inspectorOpen ? "Hide inspector" : "Design inspector"}
-        </button>
-        <button
-          disabled={!history.length || pending || uploading}
-          onClick={() => {
-            const previous = history[history.length - 1];
-            void render(previous, false);
           }}
         >
-          Undo
-        </button>
-        <button
-          onClick={() => {
-            const el = dialog.current;
-            if (document.fullscreenElement)
-              void document
-                .exitFullscreen()
-                .catch(() => setError("Fullscreen is unavailable."));
-            else
-              void el
-                ?.requestFullscreen?.()
-                .catch(() => setError("Fullscreen is unavailable."));
-          }}
-        >
-          Fullscreen
+          <Eye size={16} /> Preview
         </button>
         <button
           disabled={pending || uploading}
-          onClick={onClose}
-          aria-label="Close live preview"
+          onClick={() => void exportDesign("json")}
         >
-          Close ×
+          JSON
         </button>
-      </header>
+        <span className="studio-options-note">
+          {width} px · {device} layout
+        </span>
+      </div>
       {editing && (
         <div className="canvas-command-bar" aria-label="Canvas tools">
           <div
@@ -743,16 +968,6 @@ export default function LiveWorkspace({
           to cancel
         </div>
       )}
-      <div className="live-status" role="status">
-        {error ||
-          (uploading
-            ? "Preparing image…"
-            : pending
-              ? "Updating preview…"
-              : history.length
-                ? "Changes saved to this draft. JSON and ZIP include your edits."
-                : "Double-click text to edit · drag to move · use handles to resize.")}
-      </div>
       {share && (
         <div className="share-result">
           <label>
@@ -776,6 +991,102 @@ export default function LiveWorkspace({
           (!showOriginal || (!source && !screenshot) ? " solo-preview" : "")
         }
       >
+        <nav className="studio-toolrail" aria-label="Editing tools">
+          <button
+            title="Move tool (V)"
+            aria-label="Move tool"
+            aria-pressed={editing && freeMove && !measuring}
+            onClick={() => {
+              setEditing(true);
+              setFreeMove(true);
+              setMeasuring(false);
+            }}
+          >
+            <MousePointer2 size={20} />
+          </button>
+          <button
+            title="Reorder elements"
+            aria-label="Reorder tool"
+            aria-pressed={editing && !freeMove}
+            onClick={() => {
+              setEditing(true);
+              setFreeMove(false);
+              setMeasuring(false);
+            }}
+          >
+            <ListOrdered size={20} />
+          </button>
+          <span className="studio-tool-divider" />
+          <button
+            title="Add text"
+            aria-label="Add text"
+            disabled={pending || uploading}
+            onClick={() => insertWidget("text")}
+          >
+            <Type size={20} />
+          </button>
+          <button
+            title="Add image"
+            aria-label="Add image"
+            disabled={pending || uploading}
+            onClick={() => insertWidget("image")}
+          >
+            <ImagePlus size={20} />
+          </button>
+          <button
+            title="Add section"
+            aria-label="Add section"
+            disabled={pending || uploading}
+            onClick={() => {
+              const next = addSection(draft);
+              setSelected(next.nodes.at(-1)!.id);
+              setInspectorOpen(true);
+              void render(next);
+            }}
+          >
+            <SquarePlus size={20} />
+          </button>
+          <span className="studio-tool-divider" />
+          <button
+            title="Measure spacing"
+            aria-label="Measure tool"
+            aria-pressed={measuring}
+            onClick={() => {
+              setMeasuring((v) => !v);
+              setInspectorOpen(true);
+            }}
+          >
+            <Ruler size={20} />
+          </button>
+          <button
+            title="Layers and Properties"
+            aria-label="Show Layers and Properties"
+            aria-pressed={inspectorOpen}
+            onClick={() => {
+              setInspectorOpen((v) => !v);
+              setMeasuring(false);
+            }}
+          >
+            <Layers size={20} />
+          </button>
+          <span className="studio-tool-divider" />
+          <button
+            title="Duplicate selected element"
+            aria-label="Duplicate selected element"
+            disabled={!node || pending || uploading}
+            onClick={() => treeAction("duplicate")}
+          >
+            <Copy size={18} />
+          </button>
+          <button
+            title="Delete selected element"
+            aria-label="Delete selected element"
+            disabled={!node || pending || uploading}
+            onClick={() => treeAction("delete")}
+          >
+            <Trash2 size={18} />
+          </button>
+        </nav>
         {showOriginal && (source || screenshot) && (
           <>
             <section className="live-pane">
@@ -809,7 +1120,8 @@ export default function LiveWorkspace({
               )}
               {original === "capture" && (
                 <p className="live-note">
-                  Captured desktop reference · 1440px · may show only the top viewport.
+                  Captured desktop reference · 1440px · may show only the top
+                  viewport.
                 </p>
               )}
               <div className="live-scroll">
@@ -852,7 +1164,9 @@ export default function LiveWorkspace({
         )}
         <section className="live-pane">
           <div className="live-pane-bar">
-            <b>Our output</b>
+            <b>
+              <span className="studio-tab-dot" /> {draft.title}
+            </b>
             <span>
               Interactive · {device} · {width}px
             </span>
@@ -887,174 +1201,200 @@ export default function LiveWorkspace({
           </div>
         </section>
         {(inspectorOpen || measuring) && (
-          <aside
-            ref={inspector}
-            className="live-editor"
-            aria-label="Element editor"
-          >
-            <div className="inspector-heading">
-              <span className="inspector-dot" />
-              <h3>{measuring ? "Measure & edit" : "Design inspector"}</h3>
-              <button
-                type="button"
-                aria-label="Close inspector"
-                onClick={() => {
-                  setInspectorOpen(false);
-                  setMeasuring(false);
-                }}
-              >
-                ×
-              </button>
-            </div>
-            <p className="editor-shortcut">
-              Double-click text to type directly. Click outside to save. Esc
-              cancels.
-            </p>
+          <div className="studio-dock">
             <section className="layers-panel" aria-label="Page layers">
-              <div className="layers-title"><b>Layers</b><span>{nodes.length} elements</span></div>
-              <input aria-label="Search layers" className="layer-search" value={layerQuery} onChange={(e) => setLayerQuery(e.target.value)} placeholder="Find a section or element" />
-              <div className="layer-list">{renderLayerNodes(draft.nodes)}</div>
-              <small>Choose an item to edit. Use the eye to hide it at the current screen size.</small>
-            </section>
-            <label>
-              Select text to edit
-              <select
-                aria-label="Select text to edit"
-                value={
-                  node && ["heading", "text"].includes(node.kind)
-                    ? selected
-                    : ""
-                }
-                onChange={(e) => {
-                  setSelected(e.target.value);
-                  setSelectedIds(e.target.value ? [e.target.value] : []);
-                }}
-              >
-                <option value="">
-                  Click text in the preview or choose here
-                </option>
-                {nodes
-                  .filter((n) => n.kind === "heading" || n.kind === "text")
-                  .map((n) => (
-                    <option key={n.id} value={n.id}>
-                      {n.kind}: {(n.text || n.id).slice(0, 65)}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            {node && (node.kind === "heading" || node.kind === "text") ? (
-              <fieldset
-                disabled={pending || uploading}
-                className="element-fields text-fields"
-              >
-                <TextEditor key={node.id} node={node} onSave={patch} />
-                <FontPicker
-                  value={computedStyle.fontFamily || ""}
-                  onChange={(value) => style("fontFamily", value)}
-                />
-              </fieldset>
-            ) : (
-              <p className="editor-hint">
-                Choose a heading or paragraph above to change its text and font.
-              </p>
-            )}
-            {measuring && (
-              <div className="measure-panel">
-                <p>
-                  Click an element. Shift + click another to measure the gap.
-                  Values are CSS pixels before preview zoom.
-                </p>
-                {measure && (
-                  <>
-                    <b>
-                      {measure.width} × {measure.height} px
-                    </b>
-                    <p>
-                      Page position: X {measure.x} / Y {measure.y}
-                    </p>
-                    <p>
-                      Padding T / R / B / L<br />
-                      {measure.padding.join(" / ")} px
-                    </p>
-                    <p>
-                      Margin T / R / B / L<br />
-                      {measure.margin.join(" / ")} px
-                    </p>
-                    {measure.parent && (
-                      <p>
-                        Distance from parent edges T / R / B / L<br />
-                        {[
-                          measure.parent.top,
-                          measure.parent.right,
-                          measure.parent.bottom,
-                          measure.parent.left,
-                        ].join(" / ")}{" "}
-                        px
-                      </p>
-                    )}
-                    {measure.reference && (
-                      <p>
-                        Gap to second element: X {measure.reference.horizontal}{" "}
-                        / Y {measure.reference.vertical} px
-                        <br />
-                        Position difference: X {measure.reference.deltaX} / Y{" "}
-                        {measure.reference.deltaY} px
-                        <br />A zero gap means their boxes overlap on that axis.
-                      </p>
-                    )}
-                  </>
-                )}
+              <div className="layers-title">
+                <b>Layers</b>
+                <span>{nodes.length} elements</span>
               </div>
-            )}
-            <p>
-              Drag an element directly to move it. Shift + click selects
-              multiple elements. Use the corner handles to resize. Arrow keys
-              nudge 1px; Shift + arrow nudges 10px. Reorder moves elements
-              between sections. Review each device before export.
-            </p>
-            <button
-              disabled={pending || uploading}
-              onClick={() => void render(addSection(draft))}
+              <input
+                aria-label="Search layers"
+                className="layer-search"
+                value={layerQuery}
+                onChange={(e) => setLayerQuery(e.target.value)}
+                placeholder="Find a section or element"
+              />
+              <fieldset disabled={pending || uploading} className="layer-list">
+                {renderLayerNodes(draft.nodes)}
+              </fieldset>
+              <small>
+                Choose an item to edit. Use the eye to hide it at the current
+                screen size.
+              </small>
+            </section>
+            <aside
+              ref={inspector}
+              className="live-editor"
+              aria-label="Element editor"
             >
-              Add page section
-            </button>
-            {node && (
-              <div className="tree-controls">
-                <button onClick={selectParent}>Select parent section</button>
+              <div className="inspector-heading">
+                <span className="inspector-dot" />
+                <h3>{measuring ? "Measurements" : "Properties"}</h3>
                 <button
-                  disabled={pending || uploading}
-                  onClick={() => treeAction("up")}
+                  type="button"
+                  aria-label="Close inspector"
+                  onClick={() => {
+                    setInspectorOpen(false);
+                    setMeasuring(false);
+                  }}
                 >
-                  Move up
+                  ×
                 </button>
-                <button
-                  disabled={pending || uploading}
-                  onClick={() => treeAction("down")}
+              </div>
+              <p className="editor-shortcut">
+                Double-click text to type directly. Click outside to save. Esc
+                cancels.
+              </p>
+              <label>
+                Select text to edit
+                <select
+                  aria-label="Select text to edit"
+                  value={
+                    node && ["heading", "text"].includes(node.kind)
+                      ? selected
+                      : ""
+                  }
+                  onChange={(e) => {
+                    setSelected(e.target.value);
+                    setSelectedIds(e.target.value ? [e.target.value] : []);
+                  }}
                 >
-                  Move down
-                </button>
-                <button
+                  <option value="">
+                    Click text in the preview or choose here
+                  </option>
+                  {nodes
+                    .filter((n) => n.kind === "heading" || n.kind === "text")
+                    .map((n) => (
+                      <option key={n.id} value={n.id}>
+                        {n.kind}: {(n.text || n.id).slice(0, 65)}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              {node && (node.kind === "heading" || node.kind === "text") ? (
+                <fieldset
                   disabled={pending || uploading}
-                  onClick={() => treeAction("duplicate")}
+                  className="element-fields text-fields"
                 >
-                  Duplicate
-                </button>
-                <button
-                  disabled={pending || uploading}
-                  onClick={() => treeAction("delete")}
-                >
-                  Delete
-                </button>
-                {node.kind === "container" && (
-                  <>
-                    <button
-                      disabled={pending || uploading}
-                      onClick={() => void render(addSection(draft, node.id))}
-                    >
-                      Add inside section
-                    </button>
-                    {(["heading", "text", "button", "image", "search", "contact"] as const).map(
-                      (kind) => (
+                  <TextEditor key={node.id} node={node} onSave={patch} />
+                  <FontPicker
+                    value={computedStyle.fontFamily || ""}
+                    onChange={(value) => style("fontFamily", value)}
+                  />
+                </fieldset>
+              ) : (
+                <p className="editor-hint">
+                  Choose a heading or paragraph above to change its text and
+                  font.
+                </p>
+              )}
+              {measuring && (
+                <div className="measure-panel">
+                  <p>
+                    Click an element. Shift + click another to measure the gap.
+                    Values are CSS pixels before preview zoom.
+                  </p>
+                  {measure && (
+                    <>
+                      <b>
+                        {measure.width} × {measure.height} px
+                      </b>
+                      <p>
+                        Page position: X {measure.x} / Y {measure.y}
+                      </p>
+                      <p>
+                        Padding T / R / B / L<br />
+                        {measure.padding.join(" / ")} px
+                      </p>
+                      <p>
+                        Margin T / R / B / L<br />
+                        {measure.margin.join(" / ")} px
+                      </p>
+                      {measure.parent && (
+                        <p>
+                          Distance from parent edges T / R / B / L<br />
+                          {[
+                            measure.parent.top,
+                            measure.parent.right,
+                            measure.parent.bottom,
+                            measure.parent.left,
+                          ].join(" / ")}{" "}
+                          px
+                        </p>
+                      )}
+                      {measure.reference && (
+                        <p>
+                          Gap to second element: X{" "}
+                          {measure.reference.horizontal} / Y{" "}
+                          {measure.reference.vertical} px
+                          <br />
+                          Position difference: X {measure.reference.deltaX} / Y{" "}
+                          {measure.reference.deltaY} px
+                          <br />A zero gap means their boxes overlap on that
+                          axis.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+              <p>
+                Drag an element directly to move it. Shift + click selects
+                multiple elements. Use the corner handles to resize. Arrow keys
+                nudge 1px; Shift + arrow nudges 10px. Reorder moves elements
+                between sections. Review each device before export.
+              </p>
+              <button
+                disabled={pending || uploading}
+                onClick={() => void render(addSection(draft))}
+              >
+                Add page section
+              </button>
+              {node && (
+                <div className="tree-controls">
+                  <button onClick={selectParent}>Select parent section</button>
+                  <button
+                    disabled={pending || uploading}
+                    onClick={() => treeAction("up")}
+                  >
+                    Move up
+                  </button>
+                  <button
+                    disabled={pending || uploading}
+                    onClick={() => treeAction("down")}
+                  >
+                    Move down
+                  </button>
+                  <button
+                    disabled={pending || uploading}
+                    onClick={() => treeAction("duplicate")}
+                  >
+                    Duplicate
+                  </button>
+                  <button
+                    disabled={pending || uploading}
+                    onClick={() => treeAction("delete")}
+                  >
+                    Delete
+                  </button>
+                  {node.kind === "container" && (
+                    <>
+                      <button
+                        disabled={pending || uploading}
+                        onClick={() => void render(addSection(draft, node.id))}
+                      >
+                        Add inside section
+                      </button>
+                      {(
+                        [
+                          "heading",
+                          "text",
+                          "button",
+                          "image",
+                          "search",
+                          "contact",
+                        ] as const
+                      ).map((kind) => (
                         <button
                           key={kind}
                           disabled={pending || uploading}
@@ -1069,363 +1409,394 @@ export default function LiveWorkspace({
                         >
                           Add {kind}
                         </button>
-                      ),
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-            <label>
-              Element
-              <select
-                value={selected}
-                onChange={(e) => {
-                  setSelected(e.target.value);
-                  setSelectedIds(e.target.value ? [e.target.value] : []);
-                }}
-              >
-                <option value="">Choose an element</option>
-                {nodes.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {n.kind}: {(n.text || n.alt || n.id).slice(0, 65)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {node && (
-              <fieldset
-                disabled={pending || uploading}
-                className="element-fields"
-                key={node.id + device + JSON.stringify(node)}
-              >
-                <p>
-                  Layout changes apply to {device}. Content applies to all
-                  devices.
-                </p>
-                {(
-                  [
-                    "fontFamily",
-                    "fontWeight",
-                    "align",
-                    "objectFit",
-                    "direction",
-                    "justify",
-                    "alignItems",
-                    "backgroundSize",
-                  ] as const
-                )
-                  .filter((key) =>
-                    node.kind === "container"
-                      ? [
-                          "direction",
-                          "justify",
-                          "alignItems",
-                          "backgroundSize",
-                        ].includes(key)
-                      : node.kind === "image"
-                        ? key === "objectFit"
-                        : ["fontWeight", "align"].includes(key),
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+              <label>
+                Element
+                <select
+                  value={selected}
+                  onChange={(e) => {
+                    setSelected(e.target.value);
+                    setSelectedIds(e.target.value ? [e.target.value] : []);
+                  }}
+                >
+                  <option value="">Choose an element</option>
+                  {nodes.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.kind}: {(n.text || n.alt || n.id).slice(0, 65)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {node && (
+                <fieldset
+                  disabled={pending || uploading}
+                  className="element-fields"
+                  key={node.id + device + JSON.stringify(node)}
+                >
+                  <p>
+                    Layout changes apply to {device}. Content applies to all
+                    devices.
+                  </p>
+                  {(
+                    [
+                      "fontFamily",
+                      "fontWeight",
+                      "align",
+                      "objectFit",
+                      "direction",
+                      "justify",
+                      "alignItems",
+                      "backgroundSize",
+                    ] as const
                   )
-                  .map((key) => (
-                    <label key={key}>
-                      {(
-                        {
-                          fontFamily: "Font",
-                          fontWeight: "Text weight",
-                          align: "Text alignment",
-                          objectFit: "Image fit",
-                          direction: "Section layout",
-                          justify: "Item arrangement",
-                          alignItems: "Item alignment",
-                          backgroundSize: "Background image fit",
-                          fontSize: "Text size (px)",
-                          padding: "Inner spacing (px)",
-                          gap: "Space between items (px)",
-                          radius: "Rounded corners (px)",
-                          width: "Width (%)",
-                          height: "Image height (px)",
-                          minHeight: "Minimum height (px)",
-                          lineHeight: "Line spacing (px)",
-                          letterSpacing: "Letter spacing (px)",
-                          color: "Text colour / hex",
-                          background: "Background colour / hex",
-                        } as Record<string, string>
-                      )[key] || key}
-                      <select
-                        value={String(computedStyle[key] || "")}
-                        onChange={(e) => style(key, e.target.value)}
-                      >
-                        <option value="">Original / inherited</option>
-                        {(key === "fontFamily"
-                          ? ["Arial", "Georgia", "Verdana", "Trebuchet MS"]
-                          : key === "fontWeight"
-                            ? [
-                                "100",
-                                "200",
-                                "300",
-                                "400",
-                                "500",
-                                "600",
-                                "700",
-                                "800",
-                                "900",
-                              ]
-                            : key === "align"
-                              ? ["left", "center", "right"]
-                              : key === "objectFit"
-                                ? ["cover", "contain", "fill"]
-                                : key === "direction"
-                                  ? [
-                                      "row",
-                                      "column",
-                                      "row-reverse",
-                                      "column-reverse",
-                                    ]
-                                  : key === "justify"
+                    .filter((key) =>
+                      node.kind === "container"
+                        ? [
+                            "direction",
+                            "justify",
+                            "alignItems",
+                            "backgroundSize",
+                          ].includes(key)
+                        : node.kind === "image"
+                          ? key === "objectFit"
+                          : ["fontWeight", "align"].includes(key),
+                    )
+                    .map((key) => (
+                      <label key={key}>
+                        {(
+                          {
+                            fontFamily: "Font",
+                            fontWeight: "Text weight",
+                            align: "Text alignment",
+                            objectFit: "Image fit",
+                            direction: "Section layout",
+                            justify: "Item arrangement",
+                            alignItems: "Item alignment",
+                            backgroundSize: "Background image fit",
+                            fontSize: "Text size (px)",
+                            padding: "Inner spacing (px)",
+                            gap: "Space between items (px)",
+                            radius: "Rounded corners (px)",
+                            width: "Width (%)",
+                            height: "Image height (px)",
+                            minHeight: "Minimum height (px)",
+                            lineHeight: "Line spacing (px)",
+                            letterSpacing: "Letter spacing (px)",
+                            color: "Text colour / hex",
+                            background: "Background colour / hex",
+                          } as Record<string, string>
+                        )[key] || key}
+                        <select
+                          value={String(computedStyle[key] || "")}
+                          onChange={(e) => style(key, e.target.value)}
+                        >
+                          <option value="">Original / inherited</option>
+                          {(key === "fontFamily"
+                            ? ["Arial", "Georgia", "Verdana", "Trebuchet MS"]
+                            : key === "fontWeight"
+                              ? [
+                                  "100",
+                                  "200",
+                                  "300",
+                                  "400",
+                                  "500",
+                                  "600",
+                                  "700",
+                                  "800",
+                                  "900",
+                                ]
+                              : key === "align"
+                                ? ["left", "center", "right"]
+                                : key === "objectFit"
+                                  ? ["cover", "contain", "fill"]
+                                  : key === "direction"
                                     ? [
-                                        "flex-start",
-                                        "center",
-                                        "flex-end",
-                                        "space-between",
+                                        "row",
+                                        "column",
+                                        "row-reverse",
+                                        "column-reverse",
                                       ]
-                                    : key === "alignItems"
+                                    : key === "justify"
                                       ? [
                                           "flex-start",
                                           "center",
                                           "flex-end",
-                                          "stretch",
+                                          "space-between",
                                         ]
-                                      : ["cover", "contain", "auto"]
-                        ).map((v) => (
-                          <option key={v} value={v}>
-                            {v}
-                          </option>
-                        ))}
-                      </select>
+                                      : key === "alignItems"
+                                        ? [
+                                            "flex-start",
+                                            "center",
+                                            "flex-end",
+                                            "stretch",
+                                          ]
+                                        : ["cover", "contain", "auto"]
+                          ).map((v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  {node.kind === "contact" && (
+                    <label>
+                      Submit button label
+                      <input
+                        value={node.text || ""}
+                        onChange={(e) => patch({ text: e.target.value })}
+                      />
                     </label>
+                  )}
+                  {node.kind === "search" && (
+                    <label>
+                      Search placeholder
+                      <input
+                        defaultValue={node.text || "Search"}
+                        maxLength={200}
+                        onBlur={(e) => patch({ text: e.target.value })}
+                      />
+                      <small>
+                        Search runs on your WordPress site after import. Keep
+                        the Studio importer active.
+                      </small>
+                    </label>
+                  )}
+                  {(node.kind === "heading" ||
+                    node.kind === "text" ||
+                    node.kind === "button" ||
+                    node.kind === "search" ||
+                    node.kind === "contact") && (
+                    <FontPicker
+                      value={computedStyle.fontFamily || ""}
+                      onChange={(value) => style("fontFamily", value)}
+                    />
+                  )}
+                  {(node.kind === "image" || node.kind === "container") && (
+                    <label>
+                      {node.kind === "image"
+                        ? "Upload image"
+                        : "Upload background image"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(e) => {
+                          void uploadImage(e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                      <small>
+                        JPG, PNG or WebP · up to 2 MB. Saved with this draft.
+                        Use Export ZIP to transfer uploads to WordPress. Large
+                        images may exceed Share preview limits.
+                      </small>
+                    </label>
+                  )}
+                  {node.kind === "container" && (
+                    <label>
+                      Section background image URL
+                      <input
+                        type="url"
+                        placeholder={
+                          isUpload(computedStyle.backgroundImage || "")
+                            ? "Uploaded background saved"
+                            : "https://…"
+                        }
+                        defaultValue={
+                          isUpload(computedStyle.backgroundImage || "")
+                            ? ""
+                            : computedStyle.backgroundImage || ""
+                        }
+                        onBlur={(e) => {
+                          if (
+                            isUpload(computedStyle.backgroundImage || "") &&
+                            !e.target.value
+                          )
+                            return;
+                          if (e.target.value !== computedStyle.backgroundImage)
+                            style("backgroundImage", e.target.value);
+                        }}
+                      />
+                    </label>
+                  )}
+                  {(["paddingBox", "marginBox"] as const).map((key) => (
+                    <fieldset key={key} className="box-editor">
+                      <legend>
+                        {key === "paddingBox" ? "Padding (px)" : "Margin (px)"}
+                      </legend>
+                      {["Top", "Right", "Bottom", "Left"].map((side, index) => (
+                        <label key={side}>
+                          {side}
+                          <input
+                            aria-label={
+                              (key === "paddingBox" ? "Padding " : "Margin ") +
+                              side
+                            }
+                            type="number"
+                            min={key === "paddingBox" ? 0 : -500}
+                            max="500"
+                            defaultValue={computedStyle[key]?.[index] || 0}
+                            onBlur={(e) => boxSide(key, index, e.target.value)}
+                          />
+                        </label>
+                      ))}
+                    </fieldset>
                   ))}
-                {node.kind === "contact" && <label>Submit button label<input value={node.text || ""} onChange={(e) => patch({ text: e.target.value })} /></label>}
-                {node.kind === "search" && <label>Search placeholder
-                  <input defaultValue={node.text || "Search"} maxLength={200} onBlur={(e) => patch({ text: e.target.value })} />
-                  <small>Search runs on your WordPress site after import. Keep the Studio importer active.</small>
-                </label>}
-                {(node.kind === "heading" ||
-                  node.kind === "text" ||
-                  node.kind === "button" || node.kind === "search" || node.kind === "contact") && (
-                  <FontPicker
-                    value={computedStyle.fontFamily || ""}
-                    onChange={(value) => style("fontFamily", value)}
-                  />
-                )}
-                {(node.kind === "image" || node.kind === "container") && (
-                  <label>
-                    {node.kind === "image"
-                      ? "Upload image"
-                      : "Upload background image"}
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      onChange={(e) => {
-                        void uploadImage(e.target.files?.[0]);
-                        e.target.value = "";
-                      }}
-                    />
-                    <small>
-                      JPG, PNG or WebP · up to 2 MB. Saved with this draft. Use
-                      Export ZIP to transfer uploads to WordPress. Large images
-                      may exceed Share preview limits.
-                    </small>
-                  </label>
-                )}
-                {node.kind === "container" && (
-                  <label>
-                    Section background image URL
-                    <input
-                      type="url"
-                      placeholder={
-                        isUpload(computedStyle.backgroundImage || "")
-                          ? "Uploaded background saved"
-                          : "https://…"
-                      }
-                      defaultValue={
-                        isUpload(computedStyle.backgroundImage || "")
-                          ? ""
-                          : computedStyle.backgroundImage || ""
-                      }
-                      onBlur={(e) => {
-                        if (
-                          isUpload(computedStyle.backgroundImage || "") &&
-                          !e.target.value
-                        )
-                          return;
-                        if (e.target.value !== computedStyle.backgroundImage)
-                          style("backgroundImage", e.target.value);
-                      }}
-                    />
-                  </label>
-                )}
-                {(["paddingBox", "marginBox"] as const).map((key) => (
-                  <fieldset key={key} className="box-editor">
-                    <legend>
-                      {key === "paddingBox" ? "Padding (px)" : "Margin (px)"}
-                    </legend>
-                    {["Top", "Right", "Bottom", "Left"].map((side, index) => (
-                      <label key={side}>
-                        {side}
+
+                  {node.kind === "button" && (
+                    <label>
+                      Button text
+                      <textarea
+                        defaultValue={node.text || ""}
+                        onBlur={(e) => {
+                          if (e.target.value !== node.text)
+                            patch({ text: e.target.value, runs: undefined });
+                        }}
+                      />
+                    </label>
+                  )}
+                  {(node.kind === "image" ||
+                    node.kind === "button" ||
+                    node.kind === "video") && (
+                    <label>
+                      {node.kind === "image"
+                        ? "Image URL"
+                        : node.kind === "video"
+                          ? "Video URL (MP4 or embed URL)"
+                          : "Link URL"}
+                      <input
+                        type="url"
+                        placeholder={
+                          node.kind === "image" && isUpload(node.url || "")
+                            ? "Uploaded image saved · paste URL to replace"
+                            : "https://…"
+                        }
+                        defaultValue={
+                          isUpload(node.url || "") ? "" : node.url || ""
+                        }
+                        onBlur={(e) => {
+                          if (isUpload(node.url || "") && !e.target.value)
+                            return;
+                          if (e.target.value !== node.url)
+                            patch({ url: e.target.value });
+                        }}
+                      />
+                    </label>
+                  )}
+                  {(
+                    [
+                      "fontSize",
+                      "padding",
+                      "gap",
+                      "radius",
+                      "width",
+                      "height",
+                      "minHeight",
+                      "lineHeight",
+                      "letterSpacing",
+                      "color",
+                      "background",
+                    ] as const
+                  )
+                    .filter((key) => key !== "height" || node.kind === "image")
+                    .map((key) => (
+                      <label key={key}>
+                        {(
+                          {
+                            fontFamily: "Font",
+                            fontWeight: "Text weight",
+                            align: "Text alignment",
+                            objectFit: "Image fit",
+                            direction: "Section layout",
+                            justify: "Item arrangement",
+                            alignItems: "Item alignment",
+                            backgroundSize: "Background image fit",
+                            fontSize: "Text size (px)",
+                            padding: "Inner spacing (px)",
+                            gap: "Space between items (px)",
+                            radius: "Rounded corners (px)",
+                            width: "Width (%)",
+                            height: "Image height (px)",
+                            minHeight: "Minimum height (px)",
+                            lineHeight: "Line spacing (px)",
+                            letterSpacing: "Letter spacing (px)",
+                            color: "Text colour / hex",
+                            background: "Background colour / hex",
+                          } as Record<string, string>
+                        )[key] || key}
                         <input
-                          aria-label={
-                            (key === "paddingBox" ? "Padding " : "Margin ") +
-                            side
+                          type={
+                            ["color", "background"].includes(key)
+                              ? "text"
+                              : "number"
                           }
-                          type="number"
-                          min={key === "paddingBox" ? 0 : -500}
-                          max="500"
-                          defaultValue={computedStyle[key]?.[index] || 0}
-                          onBlur={(e) => boxSide(key, index, e.target.value)}
+                          min={
+                            key === "width"
+                              ? 1
+                              : [
+                                    "padding",
+                                    "gap",
+                                    "radius",
+                                    "height",
+                                    "minHeight",
+                                    "lineHeight",
+                                  ].includes(key)
+                                ? 0
+                                : key === "fontSize"
+                                  ? 6
+                                  : key === "letterSpacing"
+                                    ? -20
+                                    : undefined
+                          }
+                          max={
+                            key === "width"
+                              ? 100
+                              : key === "fontSize"
+                                ? 180
+                                : key === "radius"
+                                  ? 150
+                                  : key === "padding" || key === "gap"
+                                    ? 200
+                                    : key === "letterSpacing"
+                                      ? 50
+                                      : undefined
+                          }
+                          defaultValue={
+                            (device === "desktop"
+                              ? node.style
+                              : {
+                                  ...node.style,
+                                  ...node.tablet,
+                                  ...(device === "mobile" ? node.mobile : {}),
+                                })[key] ?? ""
+                          }
+                          onBlur={(e) => style(key, e.target.value)}
                         />
                       </label>
                     ))}
-                  </fieldset>
-                ))}
-
-                {node.kind === "button" && (
-                  <label>
-                    Button text
-                    <textarea
-                      defaultValue={node.text || ""}
-                      onBlur={(e) => {
-                        if (e.target.value !== node.text)
-                          patch({ text: e.target.value, runs: undefined });
-                      }}
-                    />
-                  </label>
-                )}
-                {(node.kind === "image" ||
-                  node.kind === "button" ||
-                  node.kind === "video") && (
-                  <label>
-                    {node.kind === "image"
-                      ? "Image URL"
-                      : node.kind === "video"
-                        ? "Video URL (MP4 or embed URL)"
-                        : "Link URL"}
-                    <input
-                      type="url"
-                      placeholder={
-                        node.kind === "image" && isUpload(node.url || "")
-                          ? "Uploaded image saved · paste URL to replace"
-                          : "https://…"
-                      }
-                      defaultValue={
-                        isUpload(node.url || "") ? "" : node.url || ""
-                      }
-                      onBlur={(e) => {
-                        if (isUpload(node.url || "") && !e.target.value) return;
-                        if (e.target.value !== node.url)
-                          patch({ url: e.target.value });
-                      }}
-                    />
-                  </label>
-                )}
-                {(
-                  [
-                    "fontSize",
-                    "padding",
-                    "gap",
-                    "radius",
-                    "width",
-                    "height",
-                    "minHeight",
-                    "lineHeight",
-                    "letterSpacing",
-                    "color",
-                    "background",
-                  ] as const
-                )
-                  .filter((key) => key !== "height" || node.kind === "image")
-                  .map((key) => (
-                    <label key={key}>
-                      {(
-                        {
-                          fontFamily: "Font",
-                          fontWeight: "Text weight",
-                          align: "Text alignment",
-                          objectFit: "Image fit",
-                          direction: "Section layout",
-                          justify: "Item arrangement",
-                          alignItems: "Item alignment",
-                          backgroundSize: "Background image fit",
-                          fontSize: "Text size (px)",
-                          padding: "Inner spacing (px)",
-                          gap: "Space between items (px)",
-                          radius: "Rounded corners (px)",
-                          width: "Width (%)",
-                          height: "Image height (px)",
-                          minHeight: "Minimum height (px)",
-                          lineHeight: "Line spacing (px)",
-                          letterSpacing: "Letter spacing (px)",
-                          color: "Text colour / hex",
-                          background: "Background colour / hex",
-                        } as Record<string, string>
-                      )[key] || key}
-                      <input
-                        type={
-                          ["color", "background"].includes(key)
-                            ? "text"
-                            : "number"
-                        }
-                        min={
-                          key === "width"
-                            ? 1
-                            : [
-                                  "padding",
-                                  "gap",
-                                  "radius",
-                                  "height",
-                                  "minHeight",
-                                  "lineHeight",
-                                ].includes(key)
-                              ? 0
-                              : key === "fontSize"
-                                ? 6
-                                : key === "letterSpacing"
-                                  ? -20
-                                  : undefined
-                        }
-                        max={
-                          key === "width"
-                            ? 100
-                            : key === "fontSize"
-                              ? 180
-                              : key === "radius"
-                                ? 150
-                                : key === "padding" || key === "gap"
-                                  ? 200
-                                  : key === "letterSpacing"
-                                    ? 50
-                                    : undefined
-                        }
-                        defaultValue={
-                          (device === "desktop"
-                            ? node.style
-                            : {
-                                ...node.style,
-                                ...node.tablet,
-                                ...(device === "mobile" ? node.mobile : {}),
-                              })[key] ?? ""
-                        }
-                        onBlur={(e) => style(key, e.target.value)}
-                      />
-                    </label>
-                  ))}
-              </fieldset>
-            )}
-            <p>
-              Change a field, then leave it to apply. Up to 20 changes can be
-              undone.
-            </p>
-          </aside>
+                </fieldset>
+              )}
+              <p>
+                Change a field, then leave it to apply. Up to 20 changes can be
+                undone.
+              </p>
+            </aside>
+          </div>
         )}
+      </div>
+      <div className="live-status" role="status">
+        {error ||
+          (uploading
+            ? "Preparing image…"
+            : pending
+              ? "Updating preview…"
+              : history.length
+                ? "Changes saved to this draft. JSON and ZIP include your edits."
+                : "Double-click text to edit · drag to move · use handles to resize.")}
       </div>
       <details className="live-review">
         <summary>Capture review · {design.warnings.length} notes</summary>

@@ -34,7 +34,7 @@ export function errorResponse(e: unknown) {
 }
 export function sameOrigin(req: Request) {
   const origin = req.headers.get("origin");
-  if (origin && origin !== new URL(req.url).origin)
+  if ((origin && !authOriginMatches(req)) || req.headers.get("sec-fetch-site") === "cross-site")
     throw new Error("This action must be started from the app.");
 }
 

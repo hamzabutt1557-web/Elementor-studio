@@ -152,6 +152,11 @@ export const editorScript = `(()=>{
  function cancel(){if(gesture){gesture.items.forEach(item=>item.node.setAttribute('style',item.old));gesture=null;}pointerDrag=null;clearDrop();schedule();}
  document.addEventListener('pointercancel',cancel);
  document.addEventListener('keydown',e=>{
+  if(inline||busy||e.target.closest('input,textarea,select,[contenteditable]'))return;
+  const key=e.key.toLowerCase(),modifier=e.ctrlKey||e.metaKey;
+  if((modifier&&(key==='z'||key==='y'))||(!modifier&&key==='v')){e.preventDefault();parentWindowSend({type:'estudio-shortcut',key,modifier,shift:e.shiftKey});}
+ });
+ document.addEventListener('keydown',e=>{
   if(inline||!editing||busy||!selection.length||e.target.closest('input,textarea,select,[contenteditable]'))return;
   if(e.key==='Escape'){cancel();return;}
   const delta={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];

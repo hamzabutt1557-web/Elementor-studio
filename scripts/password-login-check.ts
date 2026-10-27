@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
  assert.match(await page.locator('.auth-error').innerText(),/Incorrect app password/);
  await page.getByLabel('App password',{exact:true}).fill(password);
  await page.getByRole('button',{name:'Open workspace',exact:true}).click();await page.waitForURL(base+'/');
- const response=await context.request.get(base+'/api/config');assert.equal(response.status(),200);assert.equal((await response.json()).version,'0.4.17');
+ const response=await context.request.get(base+'/api/config');assert.equal(response.status(),200);assert.equal((await response.json()).version,'0.4.18');
  const cookie=(await context.cookies()).find(c=>c.name==='studio_password_session');assert.ok(cookie?.httpOnly&&cookie?.secure);
  await page.reload();await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.waitForURL(base+'/sign-in');
  assert.equal((await context.request.get(base+'/api/config')).status(),401);

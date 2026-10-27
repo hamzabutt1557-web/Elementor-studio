@@ -1,7 +1,19 @@
-# Elementor Studio 0.4.17
+# Elementor Studio 0.4.18
 
 URL or client brief → editable draft → live edit/compare → native Elementor JSON or WordPress ZIP package.
 This is a page draft generator for owned/authorized sources. No similarity percentage or arbitrary-site functional clone is promised.
+
+## 0.4.18 — Desktop design workspace
+
+The editor now fills the window with a dark tool rail, document controls, a central canvas, and independently scrolling Layers and Properties docks. Mobile starts at the mobile viewport with the dock closed. New drafts open directly in the editor; Compare remains available for reference captures.
+
+- Add text, image widgets, and sections from the rail; select/reorder, measure, duplicate, delete, and align using existing native editing behavior.
+- Undo and Redo retain up to 20 edits; Ctrl/Command Z, Shift Z, and Y work from the canvas and surrounding workspace without intercepting text-field editing. A new edit clears the redo branch; failed saves preserve history.
+- JSON and ZIP export are available inside the editor and use the current design. Password access remains in place.
+- Same-origin mutations recognize the browser Host when Next uses an internal hostname and reject cross-site requests.
+- Validation: 108 automated tests; production build; local production browser checks for text editing, canvas shortcuts, add/duplicate/delete, responsive viewports, JSON/ZIP export, failed-save rollback, persistence after reload, mobile panels, and password login/logout. No browser page errors in the editor flow.
+
+This is a web page editor inspired by desktop design workspaces; it does not add Photoshop raster tools or Affinity vector-path editing.
 
 ## Run locally
 
@@ -13,7 +25,7 @@ This is a page draft generator for owned/authorized sources. No similarity perce
 
 ## Production setup
 
-- Start with `APP_PASSWORD` in Vercel for private password access (any username). Alternatively connect verified email login below. With `AUTH_MODE=email`, all private routes require the verified owner session and the old password is ignored. Missing access configuration returns 503; unauthenticated API requests return 401. `/share` stays public so client links do not expose the private editor.
+- Start with `APP_PASSWORD` in Vercel for private password access through the in-app sign-in form (no username required). Alternatively connect verified email login below. With `AUTH_MODE=email`, all private routes require the verified owner session and the old password is ignored. Missing access configuration returns 503; unauthenticated API requests return 401. `/share` stays public so client links do not expose the private editor.
 - Paste a public source URL directly; no domain registration or owner approval list is required. Capture still requires the private workspace in production. DNS-pinned public-address checks, robots policies, challenge detection and request/size limits still apply.
 - `AI_MAX_REQUEST_USD` defaults to 0.25 USD per request and caps the client budget. Server-funded AI additionally requires private app access. Provider rates must be verified by the owner. No automatic paid retry occurs.
 - Deploy with standard Next.js build settings. Chromium runs on the server; WordPress hosting is required separately for the generated site.

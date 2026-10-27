@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./studio-editor.css";
 export const metadata: Metadata = {
   title: "Elementor Studio — From reference to editable",
   description:
