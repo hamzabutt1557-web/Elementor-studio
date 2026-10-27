@@ -1,4 +1,6 @@
 import { emailLoginReady } from "@/lib/access-policy";
+import PasswordForm from "./password-form";
+import { emailLoginEnabled } from "@/lib/access-policy";
 import LoginForm from "./login-form";
 export const dynamic = "force-dynamic";
 export default function Page() {
@@ -7,16 +9,19 @@ export default function Page() {
       <div className="auth-heading">
         <span className="auth-mark">E</span>
         <h1>Your private workspace</h1>
-        <p>Sign in with your approved email to continue.</p>
+        <p>
+          {emailLoginEnabled()
+            ? "Sign in with your approved email to continue."
+            : "Enter your app password to open Elementor Studio."}
+        </p>
       </div>
       {emailLoginReady() ? (
         <LoginForm />
+      ) : !emailLoginEnabled() && process.env.APP_PASSWORD ? (
+        <PasswordForm />
       ) : (
         <div className="auth-notice">
-          Email login is awaiting its one-time connection. Your existing app
-          password is still active.
-          <br />
-          <a href="/">Back to workspace</a>
+          Sign-in setup is incomplete. Contact the workspace owner.
         </div>
       )}
     </main>

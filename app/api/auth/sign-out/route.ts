@@ -1,3 +1,6 @@
+import { NextResponse } from "next/server";
+import { emailLoginEnabled } from "@/lib/access-policy";
+import { PASSWORD_COOKIE } from "@/lib/password-session";
 import { authOriginMatches } from "@/lib/api";
 import { emailAuthClient } from "@/lib/email-auth";
 export async function POST(req: Request) {
@@ -7,6 +10,17 @@ export async function POST(req: Request) {
       { error: "Start this action from the app." },
       { status: 403, headers },
     );
+  if (!emailLoginEnabled()) {
+    const response = NextResponse.json({ ok: true }, { headers });
+    response.cookies.set(PASSWORD_COOKIE, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    return response;
+  }
   try {
     const client = await emailAuthClient();
     const { error } = await client.auth.signOut({ scope: "local" });

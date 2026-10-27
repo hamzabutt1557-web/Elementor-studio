@@ -1,4 +1,4 @@
-# Elementor Studio 0.4.16
+# Elementor Studio 0.4.17
 
 URL or client brief → editable draft → live edit/compare → native Elementor JSON or WordPress ZIP package.
 This is a page draft generator for owned/authorized sources. No similarity percentage or arbitrary-site functional clone is promised.
@@ -196,3 +196,9 @@ The live crawler and artwork acceptance test now use the same bounded SVG/CSS ic
 Validation: 103 automated tests; a 26-element real WordPress fixture matches at all three breakpoints; the full captured BLS reference page was imported into WordPress and compared with the app preview. All visible reference images loaded after scrolling (43 desktop, 60 tablet, 63 mobile). Native geometry p90 was below 0.04px on desktop/tablet and 0px on mobile, with residual desktop/tablet differences up to 32px/26px. These are geometry measurements for one captured reference state, not universal pixel fidelity or commerce-backend acceptance. Source media/font URLs remain external in that reference test.
 
 Run `scripts/artwork-check.ts` with `CHROMIUM_EXECUTABLE_PATH` for the shared capture regression. `scripts/wordpress-import-check.ts` checks the controlled native fixture, editor save, spacing controls and search. `scripts/wordpress-source-check.ts <captured-design.json>` checks the BLS reference against an isolated local WordPress installation; it uses only local test credentials and permits reference visual hosts while blocking external analytics requests.
+
+## 0.4.17 — browser-friendly password sign-in
+
+Password mode now opens `/sign-in` with an in-app password form instead of a browser Basic-auth popup. The existing APP_PASSWORD is unchanged; no username is needed. Successful login issues an eight-hour signed HttpOnly/Secure/SameSite cookie, checked independently at the proxy and API boundary. Password rotation invalidates sessions, logout clears the cookie, and email mode never accepts password sessions. Existing Basic API clients remain compatible. Login mutations require same-origin requests; password attempts have a bounded per-worker throttle (not a distributed limit).
+
+106 automated tests pass. A local production-build mobile browser test verifies opening the form, wrong-password errors, successful login, protected API access, secure cookie flags, refresh and logout. The Elementor importer remains at 0.4.16; this release changes app access only.

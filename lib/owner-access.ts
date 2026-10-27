@@ -1,3 +1,4 @@
+import { passwordSessionAccess } from "./password-session";
 import { emailAuthClient } from "./email-auth";
 import {
   basicAccess,
@@ -10,7 +11,11 @@ import {
 export async function ownerApiAccess(req: Request): Promise<Response | null> {
   const headers = { "Cache-Control": "no-store" };
   if (!emailLoginEnabled()) {
-    if (basicAccess(req.headers.get("authorization"))) return null;
+    if (
+      basicAccess(req.headers.get("authorization")) ||
+      passwordSessionAccess(req.headers.get("cookie"))
+    )
+      return null;
     if (!process.env.APP_PASSWORD && process.env.NODE_ENV !== "production")
       return null;
     return Response.json(

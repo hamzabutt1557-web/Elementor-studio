@@ -12,5 +12,5 @@ export default async function Home() {
     if (!user) redirect("/sign-in");
     if (!isOwner(user)) redirect("/access-denied");
   }
-  return <Workspace emailLogin={emailLoginEnabled()} />;
+  return <Workspace showSignOut={emailLoginEnabled() || !!process.env.APP_PASSWORD} />;
 }

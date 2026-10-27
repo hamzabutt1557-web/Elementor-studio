@@ -1,7 +1,7 @@
 {
-  "version": "0.4.16",
-  "checked_at": "2026-10-26",
-  "automated_tests": 103,
+  "version": "0.4.17",
+  "checked_at": "2026-10-27",
+  "automated_tests": 106,
   "automated_tests_status": "passed",
   "typecheck": "passed",
   "production_build": "passed",
@@ -289,7 +289,7 @@
     }
   },
   "deployment": {
-    "status": "Release prepared; verify commit and live alias via Vercel before announcing deployment"
+    "status": "Release prepared; verify live deployment before announcing"
   },
   "dependency_audit": {
     "status": "0 vulnerabilities reported after patch updates",
@@ -439,5 +439,25 @@
     ],
     "warnings": [],
     "uniqueAssets": 4
+  },
+  "password_login_acceptance": {
+    "scope": "Local production build in Chromium at 390px, fixture password only",
+    "browser": {
+      "mobileLoginPage": true,
+      "wrongPasswordError": true,
+      "login": true,
+      "protectedApi": true,
+      "secureHttpOnlyCookie": true,
+      "reload": true,
+      "logout": true
+    },
+    "unit_cases": [
+      "tampered, expired and rotated-key sessions rejected",
+      "password cookies rejected in email mode",
+      "same-origin login required",
+      "proxy redirect and independent API verification",
+      "per-worker throttle and logout cookie removal"
+    ],
+    "production_owner_password_test": "Not performed; no production password read or reset"
   }
 }

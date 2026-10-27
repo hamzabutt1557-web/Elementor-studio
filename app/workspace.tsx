@@ -137,9 +137,9 @@ function DraftViewport({ html, device }: { html: string; device: string }) {
   );
 }
 export default function Workspace({
-  emailLogin = false,
+  showSignOut = false,
 }: {
-  emailLogin?: boolean;
+  showSignOut?: boolean;
 }) {
   const [drawer, setDrawer] = useState<"project" | "brand" | null>(null);
   const [theme, setTheme] = useState("light");
@@ -1091,7 +1091,7 @@ export default function Workspace({
             </b>
           </div>
           <div className="top-right">
-            {emailLogin && <AccountMenu />}
+            {showSignOut && <AccountMenu />}
             <button
               className="quiet"
               onClick={() => setTheme((v) => (v === "dark" ? "light" : "dark"))}

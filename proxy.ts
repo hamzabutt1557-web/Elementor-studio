@@ -1,3 +1,4 @@
+import { passwordSessionAccess } from "./lib/password-session";
 import { NextRequest, NextResponse, type NextFetchEvent } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import {
@@ -76,6 +77,12 @@ export function proxy(req: NextRequest, event: NextFetchEvent) {
     return emailProxy(req);
   }
   if (req.nextUrl.pathname === "/share") return NextResponse.next();
+  if (
+    ["/sign-in", "/api/auth/password", "/api/auth/sign-out"].includes(
+      req.nextUrl.pathname,
+    )
+  )
+    return NextResponse.next();
   const password = process.env.APP_PASSWORD;
   if (!password) {
     if (process.env.NODE_ENV === "production")
@@ -88,15 +95,22 @@ export function proxy(req: NextRequest, event: NextFetchEvent) {
       );
     return NextResponse.next();
   }
-  return basicAccess(req.headers.get("authorization"))
-    ? NextResponse.next()
-    : new NextResponse("Private app. Enter your app password.", {
-        status: 401,
-        headers: {
-          "WWW-Authenticate": 'Basic realm="Elementor Studio", charset="UTF-8"',
-          "Cache-Control": "no-store",
-        },
-      });
+  if (
+    basicAccess(req.headers.get("authorization")) ||
+    passwordSessionAccess(req.headers.get("cookie"))
+  ) {
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
+  }
+  const response = req.nextUrl.pathname.startsWith("/api/")
+    ? NextResponse.json(
+        { error: "Please sign in to your private workspace." },
+        { status: 401 },
+      )
+    : NextResponse.redirect(new URL("/sign-in", req.url));
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
