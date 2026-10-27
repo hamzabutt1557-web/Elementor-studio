@@ -17,3 +17,10 @@ test('excessive nodes and depth fail before recursive validation',()=>{
  let nested:any=node(0);for(let i=1;i<10000;i++)nested={...node(i),kind:'container',children:[nested]};
  assert.throws(()=>validateDesign({...input,nodes:[nested]}),/24-level/);
 });
+test('complete native catalogs above 3 MB export within the bounded 8 MB importer limit',async()=>{
+ const nodes=Array.from({length:1800},(_,i)=>({...node(i),text:'Detailed editable product description. '.repeat(50)}));
+ nodes[nodes.length-1].text='Final catalog footer';
+ const z=await JSZip.loadAsync(await exportZip([{title:'Full catalog',source:'https://example.com',nodes,warnings:[]}],false));
+ const content=await z.file(/templates\/.*\.json$/)[0].async('string');
+ assert.ok(Buffer.byteLength(content)>3_000_000);assert.ok(Buffer.byteLength(content)<8_000_000);assert.ok(content.includes('Final catalog footer'));
+});

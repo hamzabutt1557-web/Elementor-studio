@@ -573,7 +573,7 @@ export function captureDocument() {
         el.querySelector("title")?.textContent ||
         "Captured artwork";
       warning.add(
-        "Inline SVG artwork is preserved as an editable image widget; vector paths are rasterized.",
+        "SVG and CSS artwork are preserved as editable image widgets; shapes are rasterized.",
       );
     } else if (knownVideo) {
       kind = "video";

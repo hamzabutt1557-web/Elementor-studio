@@ -231,7 +231,7 @@ export function validateDesign(input: unknown): Design {
   }
   const d = designSchema.parse(input);
   if (
-    Object.keys(d.assets || {}).length > 20 ||
+    Object.keys(d.assets || {}).length > 32 ||
     JSON.stringify(d.assets || {}).length > 1800000
   )
     throw new Error(

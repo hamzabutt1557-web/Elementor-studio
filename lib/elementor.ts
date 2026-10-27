@@ -107,7 +107,7 @@ function settings(
   }
   if (s.aspectRatio !== undefined) set("studio_aspect_ratio", s.aspectRatio ? String(s.aspectRatio) : "auto");
   if (s.objectPosition) set("studio_object_position", s.objectPosition);
-  if (kind === "container" && (s.height !== undefined || s.heightAuto !== undefined))
+  if (s.height !== undefined || s.heightAuto !== undefined)
     set("studio_height", s.heightAuto ? "auto" : (s.height || 0) + "px");
   if (s.minHeight !== undefined)
     set("min_height", { unit: "px", size: s.minHeight, sizes: [] });
@@ -145,6 +145,9 @@ function settings(
       });
     set(advanced("background_repeat"), "no-repeat");
   }
+  if (s.position) set("studio_position", s.position);
+  if (s.left !== undefined) set("studio_left", s.left + "px");
+  if (s.top !== undefined) set("studio_top", s.top + "px");
   if (s.position && ["absolute", "fixed"].includes(s.position)) {
     set(advanced("position"), s.position);
     if (s.left !== undefined)
@@ -278,6 +281,9 @@ function convert(n: DesignNode, inner = false): Element {
     const inherited = settings(base, n.kind);
     return Object.fromEntries(Object.entries(settings(next, n.kind, suffix)).filter(([key, value]) => {
       const baseKey = key.startsWith("hide_") ? "hide_desktop" : key.slice(0, -suffix.length);
+      // Native width/direction controls have breakpoint defaults (mobile 100%
+      // and column), rather than ordinary CSS inheritance. Emit each viewport.
+      if (["width","_element_custom_width","_element_width","flex_direction","flex_wrap"].includes(baseKey)) return true;
       return JSON.stringify(value) !== JSON.stringify(inherited[baseKey]);
     }));
   };

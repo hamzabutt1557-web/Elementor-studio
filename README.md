@@ -1,4 +1,4 @@
-# Elementor Studio 0.4.15
+# Elementor Studio 0.4.16
 
 URL or client brief → editable draft → live edit/compare → native Elementor JSON or WordPress ZIP package.
 This is a page draft generator for owned/authorized sources. No similarity percentage or arbitrary-site functional clone is promised.
@@ -186,3 +186,13 @@ Acceptance: 98 unit tests; local PHP 8.3 / WordPress / Elementor browser submiss
 Captured images retain responsive aspect ratios, automatic height and focal position. Fixed logo widths and fixed header/footer heights remain editable, with breakpoint resets. Zero-size line boxes, empty margin spacers and parent borders no longer accumulate product-row and footer drift. Different widget kinds at different breakpoints export as valid responsive variants. Native container wrapping now matches the preview.
 
 Existing exports do not update automatically: capture again, export a new ZIP and update the included Elementor Studio Importer before importing. This release does not add account signup or a commerce backend. See VALIDATION.json for bounded test results and remaining source-site differences.
+
+## 0.4.16 — native Elementor fidelity
+
+Fixes native mobile width/direction defaults, responsive visibility, responsive positioning, container typography, fixed widget heights, and legacy Elementor's extra spacing wrapper. Imported spacing/background/border controls now target the measured outer widget while ordinary widgets retain Elementor's selectors. Padding and margin edits were saved in Elementor and verified on the frontend.
+
+The live crawler and artwork acceptance test now use the same bounded SVG/CSS icon capture helper. Repeated artwork is reused; CSS hamburger icons and breakpoint-specific image sources are preserved as native image widgets. Artwork remains rasterized, not editable vector paths. Full catalogs can export up to 8 MB of template JSON with the existing 3,000-element bound; the importer must be updated with the new ZIP.
+
+Validation: 103 automated tests; a 26-element real WordPress fixture matches at all three breakpoints; the full captured BLS reference page was imported into WordPress and compared with the app preview. All visible reference images loaded after scrolling (43 desktop, 60 tablet, 63 mobile). Native geometry p90 was below 0.04px on desktop/tablet and 0px on mobile, with residual desktop/tablet differences up to 32px/26px. These are geometry measurements for one captured reference state, not universal pixel fidelity or commerce-backend acceptance. Source media/font URLs remain external in that reference test.
+
+Run `scripts/artwork-check.ts` with `CHROMIUM_EXECUTABLE_PATH` for the shared capture regression. `scripts/wordpress-import-check.ts` checks the controlled native fixture, editor save, spacing controls and search. `scripts/wordpress-source-check.ts <captured-design.json>` checks the BLS reference against an isolated local WordPress installation; it uses only local test credentials and permits reference visual hosts while blocking external analytics requests.

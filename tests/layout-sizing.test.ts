@@ -13,3 +13,10 @@ test('node changing from desktop text into a mobile container keeps valid editab
  const group:DesignNode={id:'abcdef01',kind:'container',style:{},children:[{id:'abcdef02',kind:'text',text:'Mobile',style:{},children:[]}]};
  const nodes=mergeResponsive([leaf],[group],[group]);const d=briefDesign('Store','Store','business');d.nodes=nodes;assert.doesNotThrow(()=>validateDesign(d));assert.equal(nodes.length,2);assert.equal(nodes[0].tablet?.hidden,true);assert.equal(nodes[1].style.hidden,true);assert.equal(nodes[1].mobile?.hidden,undefined);assert.equal(nodes[1].tablet?.hidden,false);assert.ok(toElementor(d).content[1].elements.length);
 });
+test('responsive image sources become native variants without losing the mobile artwork',()=>{
+ const make=(url:string):DesignNode=>({id:'abcdef01',kind:'image',url,style:{width:100},children:[]});
+ const geometry={mobile:{abcdef01:{x:0,y:0,width:100,height:100}}} as any;
+ const nodes=mergeResponsive([make('https://example.com/desktop.png')],[make('https://example.com/desktop.png')],[make('https://example.com/mobile.png')],geometry);
+ assert.ok(geometry.mobile[nodes[1].id]);assert.equal(geometry.mobile.abcdef01,undefined);
+ assert.equal(nodes.length,2);assert.equal(nodes[0].mobile?.hidden,true);assert.equal(nodes[1].style.hidden,true);assert.equal(nodes[1].mobile?.hidden,false);assert.equal(nodes[1].url,'https://example.com/mobile.png');
+});

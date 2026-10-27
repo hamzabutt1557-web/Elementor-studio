@@ -40,7 +40,7 @@ export async function exportZip(inputs: unknown[], media = true) {
         .slice(0, 50);
     manifest.pages.push(`templates/${name}.json`);
     const template = JSON.stringify(toElementor(d));
-    if (Buffer.byteLength(template, "utf8") > 3_000_000) throw new Error("This template exceeds the importer 3 MB limit. Export a smaller page.");
+    if (Buffer.byteLength(template, "utf8") > 8_000_000) throw new Error("This template exceeds the importer 8 MB limit. Export a smaller page.");
     zip.file(`templates/${name}.json`, template);
     zip.file(`previews/${name}.html`, previewHtml(d));
     const urls = new Set<string>();

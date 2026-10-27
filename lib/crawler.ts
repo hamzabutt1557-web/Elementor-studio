@@ -9,8 +9,7 @@ import {
 } from "./layout-audit";
 import { captureDocument } from "./capture-document";
 import { viewportWidths } from "./viewports";
-import sharp from "sharp";
-import { createHash } from "node:crypto";
+import { captureArtwork } from "./capture-artwork";
 import { assertCaptureAccess } from "./resource-policy";
 import * as cheerio from "cheerio";
 import { Design, DesignNode, id, safeLink, validateDesign } from "./design";
@@ -285,7 +284,6 @@ export async function crawl(
     const fontFaces: NonNullable<Design["fontFaces"]> = [];
     const warnings: string[] = [];
     const assets: Record<string, string> = {};
-    let assetBytes = 0;
     for (const [device, width] of [
       ["desktop", viewportWidths.desktop],
       ["tablet", viewportWidths.tablet],
@@ -371,49 +369,7 @@ export async function crawl(
           requestAnimationFrame(() => requestAnimationFrame(resolve)),
         );
       });
-      // Snapshot inline vector artwork into bounded native image widgets; source SVG never executes in exports.
-      for (const svg of (await page.locator("svg").all()).slice(0, 20)) {
-        if (
-          !(await svg.isVisible()) ||
-          (await svg.getAttribute("data-studio-artwork"))
-        )
-          continue;
-        try {
-          const png = await svg.screenshot({ timeout: 1500 });
-          const bytes = await sharp(png)
-            .resize({
-              width: 800,
-              height: 800,
-              fit: "inside",
-              withoutEnlargement: true,
-            })
-            .webp({ quality: 85 })
-            .toBuffer();
-          const url =
-            "https://studio-upload.invalid/" +
-            createHash("sha256").update(bytes).digest("hex").slice(0, 32) +
-            ".webp";
-          if (
-            !assets[url] &&
-            (Object.keys(assets).length >= 20 ||
-              assetBytes + bytes.length > 800000 ||
-              bytes.length > 250000)
-          )
-            continue;
-          if (!assets[url]) {
-            assets[url] = "data:image/webp;base64," + bytes.toString("base64");
-            assetBytes += bytes.length;
-          }
-          await svg.evaluate(
-            (el, url) => el.setAttribute("data-studio-artwork", url),
-            url,
-          );
-        } catch {
-          warnings.push(
-            "Some inline artwork could not be captured. Replace it with an uploaded image.",
-          );
-        }
-      }
+      await captureArtwork(page, assets, warnings);
       // Element screenshots scroll the page. Restore the top before measuring,
       // otherwise sticky headers and the reference screenshot capture a lower-page state.
       await restoreCaptureViewport(page, width);
@@ -477,6 +433,7 @@ export async function crawl(
       snapshots.desktop,
       snapshots.tablet,
       snapshots.mobile,
+      sourceGeometry,
     );
     const trimDefaults = (nodes: DesignNode[]) =>
       nodes.forEach((n) => {

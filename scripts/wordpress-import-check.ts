@@ -19,6 +19,11 @@ async function main(){
  {id:'aa000006',kind:'container',style:{...base,layout:'grid',columns:[1,1,1],gap:24,rowGap:24,paddingBox:[24,24,24,24]},tablet:{columns:[1,1]},mobile:{columns:[1]},children:[1,2,3].map(i=>({id:'ab00000'+i,kind:'container' as const,style:{...base,gap:12,direction:'column'},children:[{id:'ac00000'+i,kind:'image' as const,url:asset,alt:'Product '+i,style:{...base,height:200,heightAuto:true,aspectRatio:1.5,objectPosition:"50% 20%",objectFit:'cover' as const},children:[]},{id:'ad00000'+i,kind:'heading' as const,text:'Product '+i,level:2,style:{...base,fontSize:24,lineHeight:30},children:[]},{id:'ae00000'+i,kind:'text' as const,text:'Editable product description',style:base,children:[]}]}))},
  {id:'aa000007',kind:'container',style:{...base,display:'flow-root',minHeight:120,height:140,heightAuto:false,paddingBox:[24,24,24,24],background:'#172323',color:'#ffffff',gap:0},children:[{id:'aa000008',kind:'text',text:'Footer contact information',style:{...base,color:'#ffffff',display:'inline-block',float:'left',width:50,flexShrink:0,verticalAlign:'top'},mobile:{float:'none',clear:'both',width:100},children:[]}]}
  ]}]});
+ design.nodes[0].children.push(
+ {id:'af000001',kind:'container',style:{...base,width:25,display:'block',height:30,heightAuto:false},tablet:{hidden:true},children:[]},
+ {id:'af000002',kind:'container',style:{...base,width:25,display:'block',height:30,heightAuto:false,hidden:true,position:'relative',left:0,top:0},tablet:{hidden:false,position:'fixed',left:-400,top:10},mobile:{position:'relative',left:0,top:0},children:[]}
+ );
+ design.nodes[0].children.push({id:'af000003',kind:'container',style:{...base,display:'block',fontSize:0,lineHeight:0},children:[1,2].map(i=>({id:'af00000'+(i+3),kind:'text' as const,text:i===1?'S':'M',style:{...base,display:'inline-block',fontSize:10,lineHeight:10,widthPx:30,paddingBox:[4,10,4,10],marginBox:[0,5,6,0],borderWidth:1,borderStyle:'solid' as const,borderColor:'#888'},children:[]}))});
  const zip=await exportZip([design]);fs.writeFileSync('.qa/wordpress-test/package.zip',zip);fs.writeFileSync('.qa/wordpress-test/design.json',JSON.stringify(design));
  const creds=JSON.parse(fs.readFileSync('.qa/wordpress-test/credentials.json','utf8'));
  const api=await request.newContext({baseURL:'http://127.0.0.1:8777'});
@@ -42,7 +47,7 @@ async function main(){
  }
  fs.writeFileSync('.qa/wordpress-test/geometry.json',JSON.stringify(report,null,2));
  for(const device of report.devices){
-   assert.equal(device.boxes.length,21,'All native elements must be measured');
+   assert.equal(device.boxes.length,26,'All native elements must be measured');
    assert.equal(device.images.length,4,'All packaged images must be present');
    assert.ok(device.images.every((i:any)=>i.loaded&&i.src.startsWith('http://127.0.0.1:8777/wp-content/uploads/')),'Images must be served from the WordPress Media Library');
    assert.ok(device.boxes.every((b:any)=>b.expected&&b.drift<=2),'Native layout must match preview within 2px');
@@ -55,12 +60,18 @@ async function main(){
    if(heading.get('id')!=='aa000004') throw new Error('Unexpected heading');
    heading.get('settings').set('title','Edited in Elementor');
    w.elementor.elements.at(0).get('elements').at(1).get('settings').set('studio_search_placeholder','Search our site');
+   const size=w.elementor.elements.at(0).get('elements').at(w.elementor.elements.at(0).get('elements').length-1).get('elements').at(0);
+   if(size.get('id')!=='af000004')throw new Error('Unexpected size widget');
+   size.get('settings').set('_padding',{unit:'px',top:'6',right:'10',bottom:'4',left:'10',isLinked:false});
+   size.get('settings').set('_margin',{unit:'px',top:'0',right:'9',bottom:'6',left:'0',isLinked:false});
    w.$e.internal('document/save/set-is-modified',{status:true});
    await w.$e.run('document/save/draft');
  });
  await page.goto('http://127.0.0.1:8777/?page_id='+id+'&preview=true',{waitUntil:'load'});
  report.editorSaveVerified=await page.locator('.elementor-element-aa000004').innerText()==='Edited in Elementor';
  if(!report.editorSaveVerified)throw new Error('Edited heading was not persisted');
+ const spacing=await page.locator('.elementor-element-af000004').evaluate(e=>({padding:getComputedStyle(e).paddingTop,margin:getComputedStyle(e).marginRight}));
+ assert.deepEqual(spacing,{padding:'6px',margin:'9px'},'Native spacing controls must save onto the outer widget');report.nativeSpacingEditVerified=true;
  const search=page.locator('.estudio-search-input');
  assert.equal(await search.getAttribute('placeholder'),'Search our site');
  await search.fill('StudioSearchFixtureUnique');
@@ -74,7 +85,7 @@ async function main(){
  assert.match(empty,/nothing|no results|could not find|sorry/i);
  report.emptySearchVerified=true;
 
- fs.writeFileSync('.qa/wordpress-test/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify({draft:id,devices:report.devices.map((d:any)=>({device:d.device,elements:d.boxes.length,maxDriftPx:Math.max(...d.boxes.map((b:any)=>b.drift))})),editorSaveVerified:report.editorSaveVerified,localSearchVerified:report.localSearchVerified,emptySearchVerified:report.emptySearchVerified}));
+ fs.writeFileSync('.qa/wordpress-test/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify({draft:id,devices:report.devices.map((d:any)=>({device:d.device,elements:d.boxes.length,maxDriftPx:Math.max(...d.boxes.map((b:any)=>b.drift))})),editorSaveVerified:report.editorSaveVerified,nativeSpacingEditVerified:report.nativeSpacingEditVerified,localSearchVerified:report.localSearchVerified,emptySearchVerified:report.emptySearchVerified}));
  }finally{await browser.close();await api.dispose()}
 }
 main().catch(e=>{console.error(e);process.exit(1)});

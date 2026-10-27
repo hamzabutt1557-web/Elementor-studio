@@ -1,18 +1,18 @@
 {
-  "version": "0.4.15",
+  "version": "0.4.16",
   "checked_at": "2026-10-26",
-  "automated_tests": 101,
+  "automated_tests": 103,
   "automated_tests_status": "passed",
   "typecheck": "passed",
   "production_build": "passed",
   "php_runtime_checks": {
-    "8.3": "Current importer syntax and native layout sanitizer including sizing/reset/rejection cases passed",
+    "8.3": "Current importer syntax, native layout sanitizer, responsive positions, invalid CSS rejection, real frontend and editor-save checks passed",
     "7.4": "Prior release checks only; not rerun for 0.4.15"
   },
   "controlled_geometry": "42 controlled device cases passed (14 fixtures x 3); p90 <=24px",
   "real_site_geometry": {
     "source": "https://bls.uk.com/collections/panties",
-    "scope": "Source-to-preview DOM geometry, not pixel similarity or real-source WordPress acceptance. Visual resources only; analytics and fetch/XHR blocked.",
+    "scope": "Previous 0.4.15 source-to-preview geometry; retained for history. Current full native import results are in real_source_wordpress_acceptance.",
     "reports": [
       {
         "device": "desktop",
@@ -117,17 +117,17 @@
     "devices": [
       {
         "device": "desktop",
-        "elements": 21,
+        "elements": 26,
         "max_drift_px": 0
       },
       {
         "device": "tablet",
-        "elements": 21,
+        "elements": 26,
         "max_drift_px": 0
       },
       {
         "device": "mobile",
-        "elements": 21,
+        "elements": 26,
         "max_drift_px": 0
       }
     ],
@@ -139,9 +139,10 @@
       "requires": "Studio importer active; WordPress search uses the destination site",
       "standalone_widget_without_import_metadata": "CSS and destination verified"
     },
-    "scope": "Controlled 21-element fixture, not the full BLS source site",
+    "scope": "Controlled 26-element fixture; responsive hide/show, fixed-to-relative positioning, zero-size line boxes and outer widget spacing included",
     "image_focal_point": "50% 20% verified on all 4 packaged images at all three viewports",
-    "sizing": "Fixed header/footer heights, mobile auto-height reset, fixed logo width and image aspect ratio exercised"
+    "sizing": "Fixed header/footer heights, mobile auto-height reset, fixed logo width and image aspect ratio exercised",
+    "native_spacing_edit_save_frontend_verified": true
   },
   "limitations": [
     "No 100% cloning guarantee",
@@ -150,7 +151,7 @@
     "Source fonts remain external URLs and require source availability",
     "Paid AI provider calls not exercised",
     "Recognised search inputs are supported; contact forms and source-specific product filters still require integration.",
-    "Some CSS-only icons and offscreen drawer geometry still differ; real-source WordPress end-to-end acceptance remains pending."
+    "Full native BLS reference checked; broader source sites, native theme breakpoints and real commerce flows remain unverified."
   ],
   "previous_release_validation": {
     "deployment": {
@@ -288,7 +289,7 @@
     }
   },
   "deployment": {
-    "status": "release prepared; verify commit via Vercel"
+    "status": "Release prepared; verify commit and live alias via Vercel before announcing deployment"
   },
   "dependency_audit": {
     "status": "0 vulnerabilities reported after patch updates",
@@ -358,5 +359,85 @@
         "issues": []
       }
     ]
+  },
+  "real_source_wordpress_acceptance": {
+    "source": "https://bls.uk.com/collections/panties",
+    "environment": "Isolated WordPress 7.1.3 / Elementor 4.3.5 / PHP 8.3 / SQLite, 512 MB PHP memory limit",
+    "scope": "Full captured reference imported as native Elementor, compared to app preview after lazy-image scrolling; external analytics/fetch/XHR blocked",
+    "devices": [
+      {
+        "device": "desktop",
+        "compared": 1276,
+        "median_drift_px": 0.015625,
+        "p90_drift_px": 0.03125,
+        "max_drift_px": 32,
+        "over_24px": 10,
+        "visible_images": 43,
+        "loaded_visible_images": 43
+      },
+      {
+        "device": "tablet",
+        "compared": 1555,
+        "median_drift_px": 0,
+        "p90_drift_px": 0.015625,
+        "max_drift_px": 26,
+        "over_24px": 6,
+        "visible_images": 60,
+        "loaded_visible_images": 60
+      },
+      {
+        "device": "mobile",
+        "compared": 1551,
+        "median_drift_px": 0,
+        "p90_drift_px": 0,
+        "max_drift_px": 20,
+        "over_24px": 0,
+        "visible_images": 63,
+        "loaded_visible_images": 63
+      }
+    ],
+    "limitations": [
+      "One captured reference state, not general pixel-similarity acceptance",
+      "Source product media and fonts remain remote; artwork packaged locally",
+      "Residual desktop/tablet differences remain; commerce interactions not mapped to WooCommerce"
+    ]
+  },
+  "artwork_acceptance": {
+    "reports": [
+      {
+        "candidates": 26,
+        "captures": 2,
+        "skipped": 0
+      },
+      {
+        "candidates": 26,
+        "captures": 2,
+        "skipped": 0
+      },
+      {
+        "candidates": 26,
+        "captures": 2,
+        "skipped": 0
+      }
+    ],
+    "preview": [
+      {
+        "width": 1440,
+        "visibleImages": 26,
+        "loaded": true
+      },
+      {
+        "width": 820,
+        "visibleImages": 26,
+        "loaded": true
+      },
+      {
+        "width": 390,
+        "visibleImages": 26,
+        "loaded": true
+      }
+    ],
+    "warnings": [],
+    "uniqueAssets": 4
   }
 }

@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Elementor Studio Importer
  * Description: Import an Elementor Studio ZIP as editable draft WordPress pages with packaged media.
- * Version: 0.4.15
+ * Version: 0.4.16
  * Requires PHP: 7.4
  */
 if (!defined('ABSPATH')) exit;
 // Register search styling independently of imported-page metadata so bare JSON
 // imports and widgets added directly inside Elementor also receive it.
 add_action('elementor/frontend/after_register_styles', function() {
-  wp_register_style('estudio-search', false, array(), '0.4.15');
+  wp_register_style('estudio-search', false, array(), '0.4.16');
   wp_add_inline_style('estudio-search', '.estudio-search-form{margin:0;padding:0;display:block}.estudio-search-input{box-sizing:border-box;display:block;width:100%;min-width:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;line-height:inherit;box-shadow:none}.estudio-search-input::placeholder{color:inherit;opacity:1}.estudio-search-input:focus-visible{outline:2px solid currentColor;outline-offset:2px}');
 });
 // A free Elementor widget backed by WordPress's local search endpoint.
@@ -93,11 +93,11 @@ function estudio_submit_contact() {
 add_action('admin_post_estudio_contact','estudio_submit_contact');
 add_action('admin_post_nopriv_estudio_contact','estudio_submit_contact');
 add_action('elementor/frontend/after_register_styles',function() {
-  wp_register_style('estudio-contact',false,array(),'0.4.15');
+  wp_register_style('estudio-contact',false,array(),'0.4.16');
   wp_add_inline_style('estudio-contact','.estudio-contact{display:grid;gap:16px;margin:0}.estudio-contact label{display:grid;gap:6px;font:inherit}.estudio-contact input,.estudio-contact textarea{box-sizing:border-box;width:100%;padding:12px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#172033;font:inherit}.estudio-contact textarea{min-height:130px;resize:vertical}.estudio-contact button{padding:12px 20px;border:0;border-radius:6px;background:#147d68;color:#fff;font:inherit;cursor:pointer}.estudio-contact :focus-visible{outline:2px solid #147d68;outline-offset:3px}.estudio-contact button:disabled{opacity:.6;cursor:wait}.estudio-contact .estudio-trap{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}.estudio-contact [role=status]{margin:0}');
 });
 add_action('elementor/frontend/after_register_scripts',function() {
-  wp_register_script('estudio-contact',false,array(),'0.4.15',true);
+  wp_register_script('estudio-contact',false,array(),'0.4.16',true);
   wp_add_inline_script('estudio-contact', <<<'CONTACTJS'
 document.addEventListener('submit',async function(event){
  const form=event.target;if(!form.matches('.estudio-contact'))return;event.preventDefault();
@@ -152,6 +152,33 @@ add_action('elementor/widgets/register',function($manager) {
   $manager->register(new Estudio_Contact_Widget());
 });
 
+// Captured display declarations are more specific than Elementor's built-in
+// responsive visibility classes. Honor native visibility controls on the frontend.
+add_action('elementor/frontend/after_enqueue_styles', function() {
+  wp_register_style('estudio-visibility', false, array(), '0.4.16');
+  wp_enqueue_style('estudio-visibility');
+  wp_add_inline_style('estudio-visibility', '.estudio-node.elementor-widget-image,.estudio-node.elementor-widget-image > .elementor-widget-container{line-height:0}@media(min-width:1025px){body:not(.elementor-editor-active) .elementor .estudio-node.elementor-hidden-desktop{display:none!important}}@media(min-width:768px) and (max-width:1024px){body:not(.elementor-editor-active) .elementor .estudio-node.elementor-hidden-tablet{display:none!important}}@media(max-width:767px){body:not(.elementor-editor-active) .elementor .estudio-node.elementor-hidden-mobile{display:none!important}}');
+});
+
+// Legacy Elementor wraps widgets in an extra box. Move the imported widget's
+// native spacing/decoration to its measured outer box; ordinary widgets retain
+// Elementor's original selectors. The same native controls remain editable.
+add_action('elementor/element/after_section_end', function($element,$section_id) {
+  if ($element->get_name()==='container' || !in_array($section_id,array('_section_style','_section_background','_section_border'),true)) return;
+  foreach ($element->get_controls() as $name=>$control) {
+    if (empty($control['selectors']) || !preg_match('/^_(margin|padding|background|border)/',$name)) continue;
+    $selectors=array();$changed=false;
+    foreach ($control['selectors'] as $selector=>$value) {
+      if (strpos($selector,'{{WRAPPER}} > .elementor-widget-container')!==false) {
+        $selectors[str_replace('{{WRAPPER}}','{{WRAPPER}}:not(.estudio-node)',$selector)]=$value;
+        $selectors[str_replace('{{WRAPPER}} > .elementor-widget-container','{{WRAPPER}}.estudio-node',$selector)]=$value;
+        $changed=true;
+      } else $selectors[$selector]=$value;
+    }
+    if ($changed) $element->update_control($name,array('selectors'=>$selectors));
+  }
+}, 20, 2);
+
 // Free Elementor controls for source flow. Keeping these as native responsive
 // controls lets the owner change the imported flow without editing CSS.
 add_action('elementor/element/after_section_end', function($element, $section_id) {
@@ -161,6 +188,13 @@ add_action('elementor/element/after_section_end', function($element, $section_id
   $element->start_controls_section('section_studio_source_layout', array(
     'label'=>'Captured layout', 'tab'=>\Elementor\Controls_Manager::TAB_ADVANCED,
   ));
+  if ($container) {
+    $element->add_group_control(\Elementor\Group_Control_Typography::get_type(), array('name'=>'typography','selector'=>'{{WRAPPER}}'));
+    $element->add_responsive_control('align', array('label'=>'Text alignment','type'=>\Elementor\Controls_Manager::SELECT,'options'=>array('left'=>'Left','center'=>'Center','right'=>'Right'),'selectors'=>array('{{WRAPPER}}'=>'text-align:{{VALUE}};')));
+    $element->add_responsive_control('text_color', array('label'=>'Text color','type'=>\Elementor\Controls_Manager::COLOR,'selectors'=>array('{{WRAPPER}}'=>'color:{{VALUE}};')));
+  }
+  $element->add_responsive_control('studio_position', array('label'=>'Captured position','type'=>\Elementor\Controls_Manager::SELECT,'options'=>array('static'=>'Static','relative'=>'Relative','absolute'=>'Absolute','fixed'=>'Fixed','sticky'=>'Sticky'),'selectors'=>array('{{WRAPPER}}'=>'position:{{VALUE}};--position:{{VALUE}};')));
+  foreach (array('left','top') as $offset) $element->add_responsive_control('studio_'.$offset, array('label'=>'Captured '.$offset,'type'=>\Elementor\Controls_Manager::TEXT,'selectors'=>array('{{WRAPPER}}'=>$offset.':{{VALUE}};')));
   $element->add_responsive_control('studio_height', array(
     'label'=>'Captured height (px or auto)', 'type'=>\Elementor\Controls_Manager::TEXT,
     'selectors'=>array('{{WRAPPER}}'=>'height:{{VALUE}};'),
@@ -210,9 +244,13 @@ function estudio_clean_elements($elements, $depth = 0, &$count = 0) {
     if ($kind === 'widget' && !in_array($e['widgetType'] ?? '', array('heading','text-editor','button','image','video','estudio-search','estudio-contact'), true)) throw new Exception('Unsupported widget.');
     $settings = array();
     foreach (($e['settings'] ?? array()) as $key => $value) {
-      if (!preg_match('/^(hide_desktop|hide_tablet|hide_mobile|studio_contact_(name|email|message|button)|studio_search_placeholder|studio_height|studio_aspect_ratio|studio_object_position|studio_display|studio_float|studio_clear|studio_vertical_align|studio_flex_shrink|paragraph_spacing|text_padding|video_type|hosted_url|youtube_url|vimeo_url|controls|container_type|css_classes|_css_classes|position|_position|_offset_x|_offset_y|z_index|_z_index|overflow|height|grid_column|_grid_column|grid_columns_grid|grid_rows_grid|grid_gaps|_padding|_margin|_border_radius|border_border|border_width|border_color|_border_border|_border_width|_border_color|_background_(background|color|image|position|xpos|ypos|size|bg_width|repeat)|html_tag|link_to|title|header_size|editor|text|link|image|image_size|caption_source|content_width|width|min_height|padding|margin|border_radius|background_(background|color|image|position|xpos|ypos|size|bg_width|repeat)|title_color|button_text_color|text_color|align|typography_(typography|font_size|font_family|font_weight|line_height|letter_spacing|text_transform)|flex_(direction|gap|justify_content|align_items|wrap)|_element_(width|custom_width)|object-fit)(_tablet|_mobile)?$/', $key)) continue;
+      if (!preg_match('/^(hide_desktop|hide_tablet|hide_mobile|studio_contact_(name|email|message|button)|studio_search_placeholder|studio_position|studio_left|studio_top|studio_height|studio_aspect_ratio|studio_object_position|studio_display|studio_float|studio_clear|studio_vertical_align|studio_flex_shrink|paragraph_spacing|text_padding|video_type|hosted_url|youtube_url|vimeo_url|controls|container_type|css_classes|_css_classes|position|_position|_offset_x|_offset_y|z_index|_z_index|overflow|height|grid_column|_grid_column|grid_columns_grid|grid_rows_grid|grid_gaps|_padding|_margin|_border_radius|border_border|border_width|border_color|_border_border|_border_width|_border_color|_background_(background|color|image|position|xpos|ypos|size|bg_width|repeat)|html_tag|link_to|title|header_size|editor|text|link|image|image_size|caption_source|content_width|width|min_height|padding|margin|border_radius|background_(background|color|image|position|xpos|ypos|size|bg_width|repeat)|title_color|button_text_color|text_color|align|typography_(typography|font_size|font_family|font_weight|line_height|letter_spacing|text_transform)|flex_(direction|gap|justify_content|align_items|wrap)|_element_(width|custom_width)|object-fit)(_tablet|_mobile)?$/', $key)) continue;
       if ($key === 'studio_search_placeholder' || preg_match('/^studio_contact_(name|email|message|button)$/',$key)) {
         $value = mb_substr(sanitize_text_field((string)$value), 0, 200);
+      } elseif (preg_match('/^studio_position(_tablet|_mobile)?$/',$key)) {
+        if (!in_array($value,array('static','relative','absolute','fixed','sticky'),true)) continue;
+      } elseif (preg_match('/^studio_(left|top)(_tablet|_mobile)?$/',$key)) {
+        if (!is_string($value) || !preg_match('/^-?[0-9]+(?:\.[0-9]+)?px$/',$value) || abs((float)$value)>10000) continue;
       } elseif (preg_match('/^studio_height(_tablet|_mobile)?$/',$key)) {
         if (!is_string($value) || !preg_match('/^(auto|[0-9]+(?:\.[0-9]+)?px)$/',$value) || ($value !== 'auto' && (float)$value > 10000)) continue;
       } elseif (preg_match('/^studio_aspect_ratio(_tablet|_mobile)?$/',$key)) {
@@ -413,7 +451,7 @@ function estudio_screen() {
       foreach ($manifest['pages'] as $path) {
         if (!preg_match('#^templates/[a-z0-9-]+\.json$#', $path)) throw new Exception('Invalid page path.');
         $stat = $zip->statName($path);
-        if (!$stat || $stat['size'] > 3000000) throw new Exception('Page exceeds package limits.');
+        if (!$stat || $stat['size'] > 8000000) throw new Exception('Page exceeds package limits.');
         $template = json_decode($zip->getFromName($path), true);
         if (($template['version'] ?? '') !== '0.4') throw new Exception('Unsupported Elementor format.');
         $count = 0;
@@ -479,12 +517,12 @@ function estudio_screen() {
 // BEGIN STUDIO RUNTIME
 add_action('wp_enqueue_scripts', function () {
   if (!is_singular() || get_post_meta(get_queried_object_id(), '_estudio_interactions', true) !== '1') return;
-  wp_register_style('estudio-runtime', false, array(), '0.4.15'); wp_enqueue_style('estudio-runtime');
+  wp_register_style('estudio-runtime', false, array(), '0.4.16'); wp_enqueue_style('estudio-runtime');
   wp_add_inline_style('estudio-runtime', <<<'ESTUDIOCSS'
 .estudio-search-form{margin:0;padding:0;display:block}.estudio-search-input{box-sizing:border-box;display:block;width:100%;min-width:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;line-height:inherit;box-shadow:none}.estudio-search-input::placeholder{color:inherit;opacity:1}.estudio-search-input:focus-visible{outline:2px solid currentColor;outline-offset:2px}.estudio-node.elementor-widget-button .elementor-button-wrapper{line-height:0}.estudio-node.elementor-widget-button .elementor-button{display:block}body.estudio-runtime .estudio-disclosure:not(.estudio-expanded)>:not(:first-child){display:none!important}body.estudio-runtime .estudio-panel:not(.estudio-open){display:none!important}.estudio-panel{box-sizing:border-box}.estudio-panel.estudio-open{display:flex!important}body.estudio-runtime .estudio-panel{position:fixed!important;top:0;left:0;z-index:10000;max-height:100vh;overflow:auto}body.elementor-editor-active .estudio-panel{position:static!important;height:auto!important;z-index:auto!important}.estudio-panel :focus-visible,[class*="estudio-toggle-"]:focus-visible{outline:2px solid #147d68;outline-offset:3px}.estudio-product img{transition:transform .25s ease}.estudio-product img:hover{transform:scale(1.04)}.estudio-product{overflow:hidden}.estudio-catalog-controls{display:flex;flex-wrap:wrap;gap:12px;padding:16px;align-items:center;background:#fff;color:#222;width:100%}.estudio-catalog-controls input,.estudio-catalog-controls select,.estudio-quick-button{padding:10px;border:1px solid #ccc;background:#fff;color:#222;font:inherit}.estudio-quick-button{cursor:pointer;margin:8px}.estudio-quick{max-width:700px;width:90vw;max-height:85vh;overflow:auto;border:0;border-radius:12px;padding:24px;background:white;color:#222}.estudio-quick::backdrop{background:#0009}.estudio-quick img{max-height:50vh;max-width:100%;object-fit:contain}.estudio-quick button{padding:10px;float:right}.estudio-quick p{padding:16px 0}@media(prefers-reduced-motion:reduce){.estudio-product img{transition:none}}
 ESTUDIOCSS
   );
-  wp_register_script('estudio-runtime', false, array(), '0.4.15', true); wp_enqueue_script('estudio-runtime');
+  wp_register_script('estudio-runtime', false, array(), '0.4.16', true); wp_enqueue_script('estudio-runtime');
   wp_add_inline_script('estudio-runtime', <<<'ESTUDIOJS'
 (()=>{
  if(document.body.classList.contains('elementor-editor-active')||new URLSearchParams(location.search).has('elementor-preview')||(window.elementorFrontend&&window.elementorFrontend.isEditMode()))return;

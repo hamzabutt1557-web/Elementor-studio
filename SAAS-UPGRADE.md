@@ -23,6 +23,10 @@ Manually added native contact widget with editable labels, required Name/Email/M
 
 Responsive image sizing/focal position, fixed logo widths, native container heights, zero-size line boxes, empty spacers and responsive widget-kind variants. Controlled real WordPress/Elementor ZIP import matches all 21 measured elements at desktop/tablet/mobile; editor save and local search pass. Real BLS source-to-preview checking is separate from WordPress acceptance and still has residual differences.
 
+## Delivered in 0.4.16
+
+Native responsive visibility/width/position, container typography and outer widget spacing fixes. Shared bounded SVG/CSS artwork capture preserves menu icons and responsive image variants. Full BLS reference imported into real Elementor: all visible images loaded after scrolling, geometry p90 under 0.04px at all three widths; desktop/tablet outliers remain up to 32px/26px. Controlled 26-element import, editor save, native spacing edit and local search pass. This is one reference page/state, not broad production acceptance; remote source media/fonts were used in the reference check.
+
 ## Required before a public multi-customer launch
 
 | Area | Required implementation | Acceptance evidence |

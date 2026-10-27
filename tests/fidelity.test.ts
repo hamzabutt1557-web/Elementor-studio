@@ -49,7 +49,7 @@ test('packaged importer is the current plugin with grid and interaction support'
  assert.ok(importerPhp.includes('grid_columns_grid'));assert.ok(importerPhp.includes('estudio-runtime'));
  assert.ok(importerPhp.includes('function estudio_refresh_page_css($post_id)'));
  assert.ok(importerPhp.includes('estudio_refresh_page_css($id)'));
- assert.ok(importerPhp.includes('Version: 0.4.15'));
+ assert.ok(importerPhp.includes('Version: 0.4.16'));
 });
 
 test('partial breakpoint grid columns export with inherited grid context',()=>{
