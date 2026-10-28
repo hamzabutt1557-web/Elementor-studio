@@ -1,0 +1,39 @@
+name: Build pinned Figcraft runtime
+
+on:
+  push:
+    branches: [codex/figcraft-runtime-20261028]
+    paths:
+      - .github/workflows/build-figcraft-runtime.yml
+      - scripts/build-figcraft-runtime.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: 3
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install Rust and browser target
+        run: |
+          rustup toolchain install 1.95.0 --profile minimal --target wasm32-unknown-unknown
+          rustup default 1.95.0
+      - name: Install pinned Trunk
+        uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283
+        with:
+          tool: trunk@0.22.1
+      - name: Build pinned browser API runtime
+        run: python3 scripts/build-figcraft-runtime.py
+      - name: Upload runtime and provenance
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: figcraft-integrated-90054a89
+          path: public/figcraft/integrated/
+          if-no-files-found: error
+          retention-days: 7
